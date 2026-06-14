@@ -204,10 +204,19 @@ editor work against any backend/storage. The remote adapter uses your app's auth
 ## Security
 
 All pasted/loaded content is sanitized; URLs and image sources are validated;
-SVG/`data:` script vectors and active content are rejected; the editor never
-executes embedded scripts. Integrators remain responsible for backend auth,
-transport (HTTPS), CSP, and storage policy. See `sanitizeUrl`, `sanitizeImageSrc`,
-`sanitizeHtml`.
+SVG/`data:` script vectors and active content are rejected; inline `style`
+values from document JSON are re-validated at render time so a crafted attribute
+(e.g. `align: "left;background:url(...)"`) cannot inject CSS; oversized data URIs
+are rejected; and the editor never executes embedded scripts. Integrators remain
+responsible for backend auth, transport (HTTPS), and storage policy. See
+`sanitizeUrl`, `sanitizeImageSrc`, `sanitizeHtml`.
+
+**Content Security Policy.** The editor applies formatting (alignment, color,
+font, highlight) via inline `style` *attributes*, so it requires
+`style-src 'unsafe-inline'` (or `style-src-attr 'unsafe-inline'`). It does not
+use inline `<script>` or `eval`, so `script-src` can be strict (nonce/hash
+based). At-rest encryption of the local IndexedDB store is not built in; for
+sensitive deployments, wrap the injected `LocalStoreAdapter` to encrypt values.
 
 ## Scripts
 
