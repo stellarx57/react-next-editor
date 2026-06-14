@@ -43,7 +43,9 @@ export function sanitizeUrl(raw: string | null | undefined): string | null {
   if (!cleaned) return null;
   if (DANGEROUS_SCHEME.test(cleaned)) return null;
 
-  // Relative URLs, anchors, and protocol-relative URLs are safe to keep.
+  // Protocol-relative URLs are upgraded to https (checked before single-'/').
+  if (cleaned.startsWith('//')) return `https:${cleaned}`;
+  // Relative URLs and anchors are safe to keep.
   if (
     cleaned.startsWith('/') ||
     cleaned.startsWith('#') ||
@@ -53,7 +55,6 @@ export function sanitizeUrl(raw: string | null | undefined): string | null {
   ) {
     return cleaned;
   }
-  if (cleaned.startsWith('//')) return `https:${cleaned}`;
 
   // If it has a scheme, it must be in the allow-list.
   const schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(cleaned);
@@ -85,10 +86,10 @@ export function sanitizeImageSrc(raw: string | null | undefined): string | null 
     return null;
   }
 
+  if (cleaned.startsWith('//')) return `https:${cleaned}`;
   if (cleaned.startsWith('/') || cleaned.startsWith('./') || cleaned.startsWith('../')) {
     return cleaned;
   }
-  if (cleaned.startsWith('//')) return `https:${cleaned}`;
 
   const schemeMatch = /^([a-z][a-z0-9+.-]*):/i.exec(cleaned);
   if (schemeMatch) {
