@@ -1,5 +1,6 @@
 import type { MarkSpec } from 'prosemirror-model';
 import { sanitizeUrl } from '../../security/sanitize';
+import { cssFontFamily, cssNumber, normalizeCssColor } from '../../security/css';
 
 /**
  * Mark specifications. Each is a self-contained {@link MarkSpec} with parse and
@@ -137,13 +138,14 @@ export const fontFamily: MarkSpec = {
     {
       style: 'font-family',
       getAttrs: (value) => {
-        const family = (value as string).replace(/["']/g, '').trim();
+        const family = cssFontFamily(value);
         return family ? { family } : false;
       },
     },
   ],
   toDOM(mark) {
-    return ['span', { style: `font-family: ${cssSafe(mark.attrs.family as string)}` }, 0];
+    const family = cssFontFamily(mark.attrs.family);
+    return family ? ['span', { style: `font-family: ${family}` }, 0] : ['span', 0];
   },
 };
 
@@ -153,13 +155,14 @@ export const fontSize: MarkSpec = {
     {
       style: 'font-size',
       getAttrs: (value) => {
-        const size = parseSize(value as string);
+        const size = parseFontSize(value as string);
         return size ? { size } : false;
       },
     },
   ],
   toDOM(mark) {
-    return ['span', { style: `font-size: ${cssSafe(String(mark.attrs.size))}pt` }, 0];
+    const size = cssNumber(mark.attrs.size, 1, 1638);
+    return size ? ['span', { style: `font-size: ${size}pt` }, 0] : ['span', 0];
   },
 };
 
@@ -169,13 +172,14 @@ export const textColor: MarkSpec = {
     {
       style: 'color',
       getAttrs: (value) => {
-        const color = normalizeColor(value as string);
+        const color = normalizeCssColor(value);
         return color ? { color } : false;
       },
     },
   ],
   toDOM(mark) {
-    return ['span', { style: `color: ${cssSafe(mark.attrs.color as string)}` }, 0];
+    const color = normalizeCssColor(mark.attrs.color);
+    return color ? ['span', { style: `color: ${color}` }, 0] : ['span', 0];
   },
 };
 
@@ -186,39 +190,24 @@ export const highlight: MarkSpec = {
     {
       style: 'background-color',
       getAttrs: (value) => {
-        const color = normalizeColor(value as string);
+        const color = normalizeCssColor(value);
         return color ? { color } : false;
       },
     },
   ],
   toDOM(mark) {
-    return ['mark', { style: `background-color: ${cssSafe(mark.attrs.color as string)}` }, 0];
+    const color = normalizeCssColor(mark.attrs.color) ?? '#fff2a8';
+    return ['mark', { style: `background-color: ${color}` }, 0];
   },
 };
 
-/** Escape a CSS value so it cannot terminate the declaration or inject more. */
-function cssSafe(value: string): string {
-  return String(value).replace(/[;{}<>"']/g, '');
-}
-
-/** Parse a CSS font-size into a point value, accepting pt/px units. */
-function parseSize(value: string): number | null {
+/** Parse a CSS font-size (pt/px) into a clamped point value, or null. */
+function parseFontSize(value: string): number | null {
   const match = /(\d+(?:\.\d+)?)\s*(pt|px)?/.exec(value);
   if (!match) return null;
   const num = parseFloat(match[1]!);
-  if (!Number.isFinite(num) || num <= 0 || num > 1638) return null;
-  const unit = match[2] ?? 'pt';
+  if (!Number.isFinite(num) || num <= 0) return null;
   // 1px ≈ 0.75pt
-  const pt = unit === 'px' ? num * 0.75 : num;
-  return Math.round(pt * 100) / 100;
-}
-
-/** Validate and normalize a CSS color, rejecting anything with injection risk. */
-function normalizeColor(value: string): string | null {
-  const v = value.trim().toLowerCase();
-  if (/^#[0-9a-f]{3}$|^#[0-9a-f]{4}$|^#[0-9a-f]{6}$|^#[0-9a-f]{8}$/.test(v)) return v;
-  if (/^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/.test(v)) return v;
-  if (/^rgba\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*(0|1|0?\.\d+)\s*\)$/.test(v)) return v;
-  if (/^[a-z]{3,20}$/.test(v)) return v; // named colors
-  return null;
+  const pt = (match[2] ?? 'pt') === 'px' ? num * 0.75 : num;
+  return cssNumber(Math.round(pt * 100) / 100, 1, 1638);
 }

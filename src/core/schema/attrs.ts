@@ -1,4 +1,5 @@
 import type { Attrs, Node as PMNode } from 'prosemirror-model';
+import { cssAlign, cssInteger, cssNumber } from '../../security/css';
 
 /** Permitted text-alignment values. `null` means "inherit / default (left in LTR)". */
 export type TextAlign = 'left' | 'center' | 'right' | 'justify' | null;
@@ -63,11 +64,14 @@ export function readBlockAttrs(dom: HTMLElement): {
 export function blockDOMAttrs(node: PMNode, extra?: Record<string, string>): Record<string, string> {
   const attrs = node.attrs as Attrs;
   const styles: string[] = [];
-  if (attrs.align) styles.push(`text-align: ${attrs.align}`);
-  if (attrs.indent && attrs.indent > 0) {
-    styles.push(`margin-left: ${attrs.indent * INDENT_STEP_EM}em`);
-  }
-  if (attrs.lineHeight) styles.push(`line-height: ${attrs.lineHeight}`);
+  // Every value is re-validated here (never trust attrs from loaded JSON) so a
+  // crafted value such as "left;background:url(...)" cannot inject CSS (§5.12).
+  const align = cssAlign(attrs.align);
+  if (align) styles.push(`text-align: ${align}`);
+  const indent = cssInteger(attrs.indent, 0, MAX_INDENT);
+  if (indent && indent > 0) styles.push(`margin-left: ${indent * INDENT_STEP_EM}em`);
+  const lineHeight = cssNumber(attrs.lineHeight, 0.1, 10);
+  if (lineHeight) styles.push(`line-height: ${lineHeight}`);
 
   const out: Record<string, string> = { ...extra };
   if (styles.length) out.style = styles.join('; ');

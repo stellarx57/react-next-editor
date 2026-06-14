@@ -2,6 +2,7 @@ import { Schema, type MarkSpec, type NodeSpec } from 'prosemirror-model';
 import { tableNodes } from 'prosemirror-tables';
 import type { FeatureFlags } from '../../config/types';
 import { DEFAULT_FEATURES } from '../../config/defaults';
+import { cssAlign, normalizeCssColor } from '../../security/css';
 import * as nodeSpecs from './nodes';
 import * as markSpecs from './marks';
 
@@ -44,8 +45,9 @@ export function buildSchema(features: Partial<FeatureFlags> = {}): Schema {
             return (dom as HTMLElement).style.backgroundColor || null;
           },
           setDOMAttr(value, attrs) {
-            if (value) {
-              attrs.style = `${(attrs.style as string) || ''}background-color: ${String(value).replace(/[;{}<>"']/g, '')};`;
+            const color = normalizeCssColor(value);
+            if (color) {
+              attrs.style = `${(attrs.style as string) || ''}background-color: ${color};`;
             }
           },
         },
@@ -55,8 +57,9 @@ export function buildSchema(features: Partial<FeatureFlags> = {}): Schema {
             return (dom as HTMLElement).style.textAlign || null;
           },
           setDOMAttr(value, attrs) {
-            if (value) {
-              attrs.style = `${(attrs.style as string) || ''}text-align: ${String(value).replace(/[;{}<>"']/g, '')};`;
+            const align = cssAlign(value);
+            if (align) {
+              attrs.style = `${(attrs.style as string) || ''}text-align: ${align};`;
             }
           },
         },

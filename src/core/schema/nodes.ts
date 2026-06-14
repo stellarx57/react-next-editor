@@ -1,5 +1,6 @@
 import type { Node as PMNode, NodeSpec } from 'prosemirror-model';
 import { sanitizeImageSrc } from '../../security/sanitize';
+import { cssInteger } from '../../security/css';
 import { blockAttrs, blockDOMAttrs, readBlockAttrs } from './attrs';
 
 /**
@@ -128,7 +129,10 @@ export const image: NodeSpec = {
     const attrs: Record<string, string> = { src: safeSrc, class: 'rne-image' };
     if (alt) attrs.alt = alt;
     if (title) attrs.title = title;
-    if (width) attrs.style = `width: ${width}px`;
+    // Re-validate width to a finite, bounded number so a crafted string value
+    // cannot inject CSS via the style attribute (§5.12).
+    const safeWidth = cssInteger(width, 1, MAX_IMAGE_WIDTH);
+    if (safeWidth) attrs.style = `width: ${safeWidth}px`;
     return ['img', attrs];
   },
 };

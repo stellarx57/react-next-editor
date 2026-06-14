@@ -1,5 +1,6 @@
 import type { DocumentJSON, PageConfig } from '../config/types';
 import { sanitizeImageSrc, sanitizeUrl } from '../security/sanitize';
+import { cssAlign, cssFontFamily, cssInteger, cssNumber, normalizeCssColor } from '../security/css';
 import { resolvePageDimensions } from '../config/defaults';
 
 /** Escape text for safe inclusion in HTML element content. */
@@ -13,11 +14,6 @@ function escapeHtml(value: string): string {
 /** Escape a value for inclusion in a double-quoted HTML attribute. */
 function escapeAttr(value: string): string {
   return escapeHtml(value).replace(/"/g, '&quot;');
-}
-
-/** Strip characters that could break out of an inline CSS declaration. */
-function cssSafe(value: string): string {
-  return String(value).replace(/[;{}<>"']/g, '');
 }
 
 /** Order in which inline marks are nested (outermost first). */
@@ -63,14 +59,22 @@ function openMark(mark: MarkJSON): string {
       const title = attrs.title ? ` title="${escapeAttr(String(attrs.title))}"` : '';
       return `<a href="${escapeAttr(href)}"${title} rel="noopener noreferrer nofollow">`;
     }
-    case 'fontFamily':
-      return `<span style="font-family: ${cssSafe(String(attrs.family ?? ''))}">`;
-    case 'fontSize':
-      return `<span style="font-size: ${cssSafe(String(attrs.size ?? ''))}pt">`;
-    case 'textColor':
-      return `<span style="color: ${cssSafe(String(attrs.color ?? ''))}">`;
-    case 'highlight':
-      return `<mark style="background-color: ${cssSafe(String(attrs.color ?? '#fff2a8'))}">`;
+    case 'fontFamily': {
+      const family = cssFontFamily(attrs.family);
+      return family ? `<span style="font-family: ${family}">` : '<span>';
+    }
+    case 'fontSize': {
+      const size = cssNumber(attrs.size, 1, 1638);
+      return size ? `<span style="font-size: ${size}pt">` : '<span>';
+    }
+    case 'textColor': {
+      const color = normalizeCssColor(attrs.color);
+      return color ? `<span style="color: ${color}">` : '<span>';
+    }
+    case 'highlight': {
+      const color = normalizeCssColor(attrs.color) ?? '#fff2a8';
+      return `<mark style="background-color: ${color}">`;
+    }
     default:
       return '';
   }
@@ -137,16 +141,20 @@ function serializeImage(node: DocumentJSON): string {
   if (!src) return '';
   const alt = node.attrs?.alt ? ` alt="${escapeAttr(String(node.attrs.alt))}"` : ' alt=""';
   const title = node.attrs?.title ? ` title="${escapeAttr(String(node.attrs.title))}"` : '';
-  const width = node.attrs?.width ? ` style="width: ${Number(node.attrs.width)}px"` : '';
+  const safeWidth = cssInteger(node.attrs?.width, 1, 4000);
+  const width = safeWidth ? ` style="width: ${safeWidth}px"` : '';
   return `<img class="rne-image" src="${escapeAttr(src)}"${alt}${title}${width}>`;
 }
 
 function blockStyle(attrs: Record<string, unknown> | undefined): string {
   if (!attrs) return '';
   const styles: string[] = [];
-  if (attrs.align) styles.push(`text-align: ${cssSafe(String(attrs.align))}`);
-  if (attrs.indent && Number(attrs.indent) > 0) styles.push(`margin-left: ${Number(attrs.indent) * 3}em`);
-  if (attrs.lineHeight) styles.push(`line-height: ${cssSafe(String(attrs.lineHeight))}`);
+  const align = cssAlign(attrs.align);
+  if (align) styles.push(`text-align: ${align}`);
+  const indent = cssInteger(attrs.indent, 0, 12);
+  if (indent && indent > 0) styles.push(`margin-left: ${indent * 3}em`);
+  const lineHeight = cssNumber(attrs.lineHeight, 0.1, 10);
+  if (lineHeight) styles.push(`line-height: ${lineHeight}`);
   return styles.length ? ` style="${styles.join('; ')}"` : '';
 }
 
@@ -211,11 +219,15 @@ function serializeTable(node: DocumentJSON): string {
           const tag = cell.type === 'table_header' ? 'th' : 'td';
           const attrs = cell.attrs ?? {};
           const parts: string[] = [];
-          if (attrs.colspan && Number(attrs.colspan) > 1) parts.push(`colspan="${Number(attrs.colspan)}"`);
-          if (attrs.rowspan && Number(attrs.rowspan) > 1) parts.push(`rowspan="${Number(attrs.rowspan)}"`);
+          const colspan = cssInteger(attrs.colspan, 1, 100);
+          if (colspan && colspan > 1) parts.push(`colspan="${colspan}"`);
+          const rowspan = cssInteger(attrs.rowspan, 1, 100);
+          if (rowspan && rowspan > 1) parts.push(`rowspan="${rowspan}"`);
           const styles: string[] = [];
-          if (attrs.background) styles.push(`background-color: ${cssSafe(String(attrs.background))}`);
-          if (attrs.align) styles.push(`text-align: ${cssSafe(String(attrs.align))}`);
+          const bg = normalizeCssColor(attrs.background);
+          if (bg) styles.push(`background-color: ${bg}`);
+          const cellAlign = cssAlign(attrs.align);
+          if (cellAlign) styles.push(`text-align: ${cellAlign}`);
           if (styles.length) parts.push(`style="${styles.join('; ')}"`);
           const attrStr = parts.length ? ` ${parts.join(' ')}` : '';
           return `<${tag}${attrStr}>${(cell.content ?? []).map(serializeBlock).join('')}</${tag}>`;
