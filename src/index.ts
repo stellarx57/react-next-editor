@@ -36,6 +36,7 @@ export type {
   EditorEvents,
   EditorExtensions,
   PersistenceConfig,
+  SyncConfig,
   EditorContextValue,
 } from './react/types';
 

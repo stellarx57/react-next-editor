@@ -13,7 +13,7 @@ import type {
 } from '../config/types';
 import type { CommandSet } from '../core/commands/index';
 import type { DocxNodeConverter, TextConversionOptions } from '../export/index';
-import type { LocalStoreAdapter } from '../persistence/types';
+import type { LocalStoreAdapter, RemoteSyncAdapter, StoredDocument } from '../persistence/types';
 
 /** Imperative handle exposed via `ref` (F-10.15, F-10.16). */
 export interface EditorRef {
@@ -63,6 +63,25 @@ export interface EditorExtensions {
   plugins?: Plugin[];
   /** Custom DOCX node converters keyed by node type (F-6.16). */
   docxNodeConverters?: Record<string, DocxNodeConverter>;
+}
+
+/**
+ * Synchronization configuration (F-9.6–F-9.9, F-9.14). When provided alongside
+ * a persisted `documentId`, the editor owns a connectivity monitor and a sync
+ * engine: offline edits queue in the durable outbox and upload automatically on
+ * reconnect, with no user action. Surfaces status through `onSaveStatusChange`.
+ */
+export interface SyncConfig {
+  /** REST adapter that persists the document JSON to your API (F-9.7). */
+  remote: RemoteSyncAdapter;
+  /** Auto-flush the outbox on reconnect and after each local save. Default true. */
+  auto?: boolean;
+  /** Connectivity ping interval in ms (default 30000). */
+  pingIntervalMs?: number;
+  /** Max upload attempts before a document is parked for manual retry (default 6). */
+  maxAttempts?: number;
+  /** Invoked when a version conflict is detected (F-9.9). */
+  onConflict?: (local: StoredDocument, remote?: { version: string | number }) => void;
 }
 
 /** Local persistence configuration (F-8.x, F-9.2). */
@@ -116,6 +135,8 @@ export interface EditorProps extends EditorEvents {
   extensions?: EditorExtensions;
   /** Local persistence configuration. */
   persistence?: PersistenceConfig;
+  /** Synchronization to a REST API (offline edits auto-upload on reconnect). */
+  sync?: SyncConfig;
   /** Per-document metadata stored alongside the content. */
   metadata?: Record<string, unknown>;
   /** Root element class and inline style (theming/layout). */

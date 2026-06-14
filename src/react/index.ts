@@ -13,5 +13,6 @@ export type {
   EditorEvents,
   EditorExtensions,
   PersistenceConfig,
+  SyncConfig,
   EditorContextValue,
 } from './types';

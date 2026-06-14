@@ -34,6 +34,8 @@ import { documentToHtml } from '../export/html';
 import { exportDocument } from '../export/index';
 import { DocumentPersistence } from '../persistence/autosave';
 import { IndexedDBStore, requestPersistentStorage } from '../persistence/indexeddb';
+import { ConnectivityMonitor } from '../sync/connectivity';
+import { SyncEngine } from '../sync/engine';
 import { EditorContext } from './EditorContext';
 import { EditorErrorBoundary } from './ErrorBoundary';
 import { Toolbar } from './toolbar/Toolbar';
@@ -206,24 +208,61 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
     setEditorState((s) => s);
   }, [config.editable]);
 
-  // ---- Local persistence + crash recovery (F-9.2, F-11.9) ----
+  // ---- Local persistence, crash recovery (F-9.2, F-11.9), and sync (F-9.6–F-9.9, F-9.14) ----
   useEffect(() => {
     const documentId = props.documentId;
     const persistenceEnabled = props.persistence?.enabled ?? !!documentId;
     if (!documentId || !persistenceEnabled || !ready) return;
 
     const store = props.persistence?.store ?? new IndexedDBStore();
+    const sync = props.sync;
+    const auto = sync?.auto ?? true;
+
+    let engine: SyncEngine | null = null;
+    let monitor: ConnectivityMonitor | null = null;
+
+    // Shared status handler: surfaces both local-save and sync transitions, and
+    // triggers an upload after each successful local save when online (F-9.6).
+    const handleStatus = (status: SaveStatus, detail?: { error?: string }) => {
+      setSaveStatus(status);
+      propsRef.current.onSaveStatusChange?.(status, detail);
+      if (status === 'savedLocal' && engine && auto && (monitor?.isOnline() ?? true)) {
+        void engine.flush();
+      }
+    };
+
     const persistence = new DocumentPersistence({
       documentId,
       store,
       debounceMs: props.persistence?.debounceMs,
       metadata: props.metadata,
-      onStatus: (status, detail) => {
-        setSaveStatus(status);
-        propsRef.current.onSaveStatusChange?.(status, detail);
-      },
+      onStatus: handleStatus,
     });
     persistenceRef.current = persistence;
+
+    if (sync?.remote) {
+      engine = new SyncEngine({
+        store,
+        remote: sync.remote,
+        maxAttempts: sync.maxAttempts,
+        onStatus: handleStatus,
+        onConflict: sync.onConflict,
+      });
+      const remotePing = sync.remote.ping?.bind(sync.remote);
+      monitor = new ConnectivityMonitor({
+        ping: remotePing,
+        intervalMs: sync.pingIntervalMs,
+        onChange: (online) => {
+          if (online) {
+            if (auto && engine) void engine.flush();
+          } else {
+            handleStatus('offline');
+          }
+        },
+      });
+      monitor.start();
+      if (auto) void engine.flush(); // attempt to drain any queue from a prior session
+    }
 
     if (props.persistence?.requestPersistent !== false) {
       void requestPersistentStorage();
@@ -241,11 +280,13 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
 
     return () => {
       cancelled = true;
+      monitor?.stop();
+      engine?.cancel();
       void persistence.destroy();
       persistenceRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.documentId, ready]);
+  }, [props.documentId, ready, props.sync?.remote]);
 
   // ---- Controlled value sync (F-10.20) ----
   useEffect(() => {
