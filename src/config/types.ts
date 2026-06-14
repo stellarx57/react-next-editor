@@ -181,6 +181,7 @@ export interface EditorStrings {
   removeLink: string;
   image: string;
   imagePrompt: string;
+  imageAltPrompt: string;
   table: string;
   insertTable: string;
   addRowBefore: string;

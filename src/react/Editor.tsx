@@ -166,6 +166,7 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
         role: 'textbox',
         'aria-multiline': 'true',
         'aria-label': propsRef.current.ariaLabel ?? 'Document editor',
+        dir: propsRef.current.dir ?? 'ltr',
       },
       dispatchTransaction(tr) {
         const v = viewRef.current;
@@ -354,6 +355,7 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
         className={`rne-root${props.className ? ` ${props.className}` : ''}`}
         style={rootStyle as React.CSSProperties}
         data-ready={ready}
+        dir={props.dir ?? 'ltr'}
       >
         {toolbarEnabled && <Toolbar config={props.toolbar || undefined} />}
         <div className={`rne-canvas${showChrome ? '' : ' rne-canvas--plain'}`}>

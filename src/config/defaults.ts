@@ -103,6 +103,7 @@ export const DEFAULT_STRINGS: EditorStrings = {
   removeLink: 'Remove link',
   image: 'Image',
   imagePrompt: 'Enter image URL',
+  imageAltPrompt: 'Describe the image (alt text)',
   table: 'Table',
   insertTable: 'Insert table',
   addRowBefore: 'Insert row above',

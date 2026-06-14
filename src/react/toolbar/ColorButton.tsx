@@ -21,6 +21,7 @@ export function ColorButton({ iconName, label, apply, clear, activeColor }: Colo
   const { run, colorPalette } = useEditorContext();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -36,6 +37,7 @@ export function ColorButton({ iconName, label, apply, clear, activeColor }: Colo
   return (
     <div className="rne-color-btn" ref={containerRef}>
       <button
+        ref={buttonRef}
         type="button"
         className="rne-btn"
         title={label}
@@ -51,7 +53,16 @@ export function ColorButton({ iconName, label, apply, clear, activeColor }: Colo
         </span>
       </button>
       {open && (
-        <div className="rne-color-popover" role="menu">
+        <div
+          className="rne-color-popover"
+          role="menu"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setOpen(false);
+              buttonRef.current?.focus();
+            }
+          }}
+        >
           {colorPalette.map((color) => (
             <button
               key={color}

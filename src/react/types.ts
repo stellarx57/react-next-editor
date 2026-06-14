@@ -144,6 +144,8 @@ export interface EditorProps extends EditorEvents {
   style?: React.CSSProperties;
   /** Accessible label for the editing region (NF-4). */
   ariaLabel?: string;
+  /** Text direction for the document (NF-6, RTL awareness). Default 'ltr'. */
+  dir?: 'ltr' | 'rtl' | 'auto';
 }
 
 /** Value provided through {@link EditorContext} to toolbar and children. */

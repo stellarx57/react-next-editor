@@ -174,7 +174,14 @@ class DocxSerializer {
         out.push(new d.TextRun({ break: 1 }));
       } else if (node.type === 'image') {
         const img = this.imageRun(node);
-        if (img) out.push(img);
+        if (img) {
+          out.push(img);
+        } else {
+          // Remote images can't be embedded synchronously; preserve the alt text
+          // (or a placeholder) so information is not silently lost (F-6.17).
+          const alt = node.attrs?.alt ? String(node.attrs.alt) : '[image]';
+          out.push(new d.TextRun({ text: alt, italics: true }));
+        }
       }
     }
     return out;

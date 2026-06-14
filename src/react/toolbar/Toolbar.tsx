@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo } from 'react';
+import { Fragment, type KeyboardEvent, useCallback, useMemo, useRef } from 'react';
 import type { EditorState } from 'prosemirror-state';
 import type { FeatureFlags, ToolbarConfig, ToolbarItemId } from '../../config/types';
 import { DEFAULT_TOOLBAR_GROUPS } from '../../config/defaults';
@@ -86,6 +86,30 @@ export function Toolbar({ config }: ToolbarProps) {
 
   const groups = config?.groups ?? DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // Arrow-key navigation between toolbar buttons (WCAG toolbar pattern). Tab
+  // order is preserved; arrows move focus among enabled buttons. Selects keep
+  // their native arrow behaviour (and remain reachable via Tab), so they are not
+  // part of the arrow ring.
+  const onToolbarKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    const active = document.activeElement as HTMLElement | null;
+    if (active?.tagName === 'SELECT') return;
+    const root = toolbarRef.current;
+    if (!root) return;
+    const items = Array.from(root.querySelectorAll<HTMLElement>('button:not([disabled])'));
+    if (items.length === 0) return;
+    const idx = active ? items.indexOf(active) : -1;
+    if (idx === -1) return;
+    e.preventDefault();
+    let next = idx;
+    if (e.key === 'ArrowRight') next = (idx + 1) % items.length;
+    else if (e.key === 'ArrowLeft') next = (idx - 1 + items.length) % items.length;
+    else if (e.key === 'Home') next = 0;
+    else if (e.key === 'End') next = items.length - 1;
+    items[next]?.focus();
+  }, []);
 
   const renderedGroups = useMemo(() => {
     return groups
@@ -219,7 +243,10 @@ export function Toolbar({ config }: ToolbarProps) {
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
               const url = window.prompt(strings.imagePrompt, 'https://');
-              if (url && url.trim()) run(commands.insert.image({ src: url.trim() }));
+              if (!url || !url.trim()) return;
+              // Prompt for alt text so inserted images are accessible (NF-4).
+              const alt = window.prompt(strings.imageAltPrompt, '');
+              run(commands.insert.image({ src: url.trim(), alt: alt?.trim() || null }));
             }}
           >
             <ToolbarIcon name="image" />
@@ -246,9 +273,11 @@ export function Toolbar({ config }: ToolbarProps) {
 
   return (
     <div
+      ref={toolbarRef}
       className={`rne-toolbar${sticky ? ' rne-toolbar--sticky' : ''}`}
       role="toolbar"
       aria-label="Formatting"
+      onKeyDown={onToolbarKeyDown}
     >
       {renderedGroups.map((group, gi) => (
         <Fragment key={gi}>
