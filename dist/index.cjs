@@ -1,10 +1,10 @@
 'use strict';
 
-var chunkQSA3ZJBC_cjs = require('./chunk-QSA3ZJBC.cjs');
-var chunkW42WUCAR_cjs = require('./chunk-W42WUCAR.cjs');
+var chunk4EBPHMCI_cjs = require('./chunk-4EBPHMCI.cjs');
+var chunkP73CSV6Q_cjs = require('./chunk-P73CSV6Q.cjs');
 var chunkZHYBQNX4_cjs = require('./chunk-ZHYBQNX4.cjs');
-var chunkRSAUVRYX_cjs = require('./chunk-RSAUVRYX.cjs');
-var chunkSRDIWQEX_cjs = require('./chunk-SRDIWQEX.cjs');
+var chunkF6LJJXBU_cjs = require('./chunk-F6LJJXBU.cjs');
+var chunkBFSJWBBZ_cjs = require('./chunk-BFSJWBBZ.cjs');
 var chunkAT25KOMU_cjs = require('./chunk-AT25KOMU.cjs');
 require('./chunk-Q7SFCCGT.cjs');
 var react = require('react');
@@ -412,7 +412,7 @@ var STATUS_LABEL = {
 };
 function StatusBar({ saveStatus, hasPersistence }) {
   const { state, strings } = useEditorContext();
-  const stats = react.useMemo(() => state ? chunkQSA3ZJBC_cjs.countDocument(state.doc) : null, [state]);
+  const stats = react.useMemo(() => state ? chunk4EBPHMCI_cjs.countDocument(state.doc) : null, [state]);
   return /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "rne-statusbar", children: [
     /* @__PURE__ */ jsxRuntime.jsx("span", { children: stats ? `${stats.words} ${strings.words} \xB7 ${stats.characters} ${strings.characters}` : "" }),
     hasPersistence && saveStatus !== "idle" && /* @__PURE__ */ jsxRuntime.jsxs("span", { className: "rne-status-badge", children: [
@@ -448,8 +448,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   cfgRef.current = config;
   const featureKey = react.useMemo(() => JSON.stringify(config.features), [config.features]);
   const engine = react.useMemo(() => {
-    const schema = chunkQSA3ZJBC_cjs.buildSchema(config.features);
-    const commands = chunkQSA3ZJBC_cjs.createCommands(schema);
+    const schema = chunk4EBPHMCI_cjs.buildSchema(config.features);
+    const commands = chunk4EBPHMCI_cjs.createCommands(schema);
     return { schema, commands };
   }, [featureKey]);
   const [editorState, setEditorState] = react.useState(null);
@@ -457,13 +457,13 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const [ready, setReady] = react.useState(false);
   const getJSON = react.useCallback(() => {
     const view = viewRef.current;
-    return view ? view.state.doc.toJSON() : chunkQSA3ZJBC_cjs.createDoc(engine.schema, null).toJSON();
+    return view ? view.state.doc.toJSON() : chunk4EBPHMCI_cjs.createDoc(engine.schema, null).toJSON();
   }, [engine.schema]);
   const setContent = react.useCallback(
     (content) => {
       const view = viewRef.current;
       if (!view) return;
-      const doc = chunkQSA3ZJBC_cjs.createDoc(view.state.schema, content);
+      const doc = chunk4EBPHMCI_cjs.createDoc(view.state.schema, content);
       const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
       view.updateState(state);
       setEditorState(state);
@@ -473,8 +473,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const handle = react.useMemo(
     () => ({
       getJSON,
-      getText: (options) => chunkW42WUCAR_cjs.documentToText(getJSON(), options),
-      getHTML: () => chunkRSAUVRYX_cjs.documentToHtml(getJSON()),
+      getText: (options) => chunkP73CSV6Q_cjs.documentToText(getJSON(), options),
+      getHTML: () => chunkF6LJJXBU_cjs.documentToHtml(getJSON()),
       setContent,
       focus: () => viewRef.current?.focus(),
       isDirty: () => persistenceRef.current?.isDirty() ?? false,
@@ -484,7 +484,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       clearLocalData: async () => {
         await persistenceRef.current?.clearLocal();
       },
-      exportAs: (format, filename) => chunkW42WUCAR_cjs.exportDocument(getJSON(), format, {
+      exportAs: (format, filename) => chunkP73CSV6Q_cjs.exportDocument(getJSON(), format, {
         filename: filename ?? propsRef.current.documentId,
         page: cfgRef.current.page,
         title: filename ?? propsRef.current.documentId
@@ -499,14 +499,14 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   react.useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
-    void chunkSRDIWQEX_cjs.preloadSanitizer();
-    const plugins = chunkQSA3ZJBC_cjs.buildPlugins(engine.schema, {
+    void chunkBFSJWBBZ_cjs.preloadSanitizer();
+    const plugins = chunk4EBPHMCI_cjs.buildPlugins(engine.schema, {
       placeholder: cfgRef.current.placeholder,
       history: cfgRef.current.features.history,
       extraPlugins: propsRef.current.extensions?.plugins
     });
     const initialContent = propsRef.current.value ?? propsRef.current.initialContent ?? null;
-    const state = chunkQSA3ZJBC_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
+    const state = chunk4EBPHMCI_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
     const view = new prosemirrorView.EditorView(mount, {
       state,
       editable: () => !(propsRef.current.readOnly || propsRef.current.mode === "readonly"),
@@ -588,7 +588,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     const current = JSON.stringify(view.state.doc.toJSON());
     const next = JSON.stringify(props.value);
     if (current === next) return;
-    const doc = chunkQSA3ZJBC_cjs.createDoc(view.state.schema, props.value);
+    const doc = chunk4EBPHMCI_cjs.createDoc(view.state.schema, props.value);
     const selectionPos = Math.min(view.state.selection.from, doc.content.size);
     const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
     const withSel = state.apply(
@@ -653,59 +653,59 @@ var Editor = react.forwardRef(function Editor2(props, ref) {
 
 Object.defineProperty(exports, "buildPlugins", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.buildPlugins; }
+  get: function () { return chunk4EBPHMCI_cjs.buildPlugins; }
 });
 Object.defineProperty(exports, "buildSchema", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.buildSchema; }
+  get: function () { return chunk4EBPHMCI_cjs.buildSchema; }
 });
 Object.defineProperty(exports, "countDocument", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.countDocument; }
+  get: function () { return chunk4EBPHMCI_cjs.countDocument; }
 });
 Object.defineProperty(exports, "createCommands", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.createCommands; }
+  get: function () { return chunk4EBPHMCI_cjs.createCommands; }
 });
 Object.defineProperty(exports, "createDoc", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.createDoc; }
+  get: function () { return chunk4EBPHMCI_cjs.createDoc; }
 });
 Object.defineProperty(exports, "createEditorState", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.createEditorState; }
+  get: function () { return chunk4EBPHMCI_cjs.createEditorState; }
 });
 Object.defineProperty(exports, "defaultSchema", {
   enumerable: true,
-  get: function () { return chunkQSA3ZJBC_cjs.defaultSchema; }
+  get: function () { return chunk4EBPHMCI_cjs.defaultSchema; }
 });
 Object.defineProperty(exports, "documentToDocxBlob", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.documentToDocxBlob; }
+  get: function () { return chunkP73CSV6Q_cjs.documentToDocxBlob; }
 });
 Object.defineProperty(exports, "documentToDocxBuffer", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.documentToDocxBuffer; }
+  get: function () { return chunkP73CSV6Q_cjs.documentToDocxBuffer; }
 });
 Object.defineProperty(exports, "documentToText", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.documentToText; }
+  get: function () { return chunkP73CSV6Q_cjs.documentToText; }
 });
 Object.defineProperty(exports, "downloadBlob", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.downloadBlob; }
+  get: function () { return chunkP73CSV6Q_cjs.downloadBlob; }
 });
 Object.defineProperty(exports, "downloadText", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.downloadText; }
+  get: function () { return chunkP73CSV6Q_cjs.downloadText; }
 });
 Object.defineProperty(exports, "exportDocument", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.exportDocument; }
+  get: function () { return chunkP73CSV6Q_cjs.exportDocument; }
 });
 Object.defineProperty(exports, "printDocumentToPdf", {
   enumerable: true,
-  get: function () { return chunkW42WUCAR_cjs.printDocumentToPdf; }
+  get: function () { return chunkP73CSV6Q_cjs.printDocumentToPdf; }
 });
 Object.defineProperty(exports, "ConflictError", {
   enumerable: true,
@@ -737,23 +737,23 @@ Object.defineProperty(exports, "requestPersistentStorage", {
 });
 Object.defineProperty(exports, "buildPrintDocument", {
   enumerable: true,
-  get: function () { return chunkRSAUVRYX_cjs.buildPrintDocument; }
+  get: function () { return chunkF6LJJXBU_cjs.buildPrintDocument; }
 });
 Object.defineProperty(exports, "documentToHtml", {
   enumerable: true,
-  get: function () { return chunkRSAUVRYX_cjs.documentToHtml; }
+  get: function () { return chunkF6LJJXBU_cjs.documentToHtml; }
 });
 Object.defineProperty(exports, "sanitizeHtml", {
   enumerable: true,
-  get: function () { return chunkSRDIWQEX_cjs.sanitizeHtml; }
+  get: function () { return chunkBFSJWBBZ_cjs.sanitizeHtml; }
 });
 Object.defineProperty(exports, "sanitizeImageSrc", {
   enumerable: true,
-  get: function () { return chunkSRDIWQEX_cjs.sanitizeImageSrc; }
+  get: function () { return chunkBFSJWBBZ_cjs.sanitizeImageSrc; }
 });
 Object.defineProperty(exports, "sanitizeUrl", {
   enumerable: true,
-  get: function () { return chunkSRDIWQEX_cjs.sanitizeUrl; }
+  get: function () { return chunkBFSJWBBZ_cjs.sanitizeUrl; }
 });
 Object.defineProperty(exports, "DEFAULT_COLOR_PALETTE", {
   enumerable: true,
