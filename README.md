@@ -121,6 +121,45 @@ import {
 The same converters run in the browser and in Node, so an optional server export
 API produces output consistent with the client.
 
+### Programmatic export service (server, optional)
+
+`react-next-editor/server` is a Node-only, additive export service. It reads
+stored or inline document JSON, renders DOCX/PDF/text/HTML with the **same**
+converters, optionally writes the result to storage, and is authenticated via an
+injected hook. It does not change the offline/client guarantees — editing works
+with it absent.
+
+```ts
+import {
+  createExportService,
+  createExportHandler,
+  FilesystemStorage,
+  createPlaywrightPdfRenderer, // optional; requires `playwright`
+} from 'react-next-editor/server';
+
+const service = createExportService({
+  store: { loadDocument: (id) => db.loadDocJson(id) }, // F-6.9
+  storage: new FilesystemStorage({ baseDir: '/var/exports', baseUrl: '/exports' }), // F-6.10
+  pdfRenderer: createPlaywrightPdfRenderer(), // F-6.14 (server PDF)
+  authorize: (req, ctx) => canAccess(ctx.token, req.documentId), // F-6.15
+});
+
+// Single, batch, or async job:
+const result = await service.export({ documentId: 'doc-1', format: 'docx', store: true });
+const results = await service.exportBatch([...]);            // F-6.12, per-doc status
+const { jobId } = service.enqueue([...]);                    // F-6.13 async
+```
+
+Use it directly as a **Next.js App Router** route handler:
+
+```ts
+// app/api/export/route.ts
+import { createExportService, createExportHandler } from 'react-next-editor/server';
+export const runtime = 'nodejs';
+const handle = createExportHandler(createExportService(/* …adapters… */));
+export const POST = handle;
+```
+
 ## Subpath entry points (tree-shaking)
 
 - `react-next-editor` — React component + everything (default).
