@@ -68,10 +68,11 @@ export function removeLink(type: MarkType): Command {
 export function createLinkCommands(schema: Schema) {
   const type = schema.marks.link;
   if (!type) {
+    const noop: Command = () => false;
     return {
       commands: {} as Record<string, EditorCommand>,
-      setLink: (() => false) as Command,
-      removeLink: (() => false) as Command,
+      setLink: (_attrs: LinkAttrs): Command => noop,
+      removeLink: noop,
       getActiveLink: (_state: EditorState): LinkAttrs | null => null,
       isLinkActive: (_state: EditorState): boolean => false,
     };
