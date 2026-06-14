@@ -1,12 +1,12 @@
 'use strict';
 
-var chunk4EBPHMCI_cjs = require('./chunk-4EBPHMCI.cjs');
-var chunkZ5BK2HKE_cjs = require('./chunk-Z5BK2HKE.cjs');
-var chunkZHYBQNX4_cjs = require('./chunk-ZHYBQNX4.cjs');
-var chunk6GVC7VPR_cjs = require('./chunk-6GVC7VPR.cjs');
-var chunkF6LJJXBU_cjs = require('./chunk-F6LJJXBU.cjs');
-var chunkBFSJWBBZ_cjs = require('./chunk-BFSJWBBZ.cjs');
-var chunkAT25KOMU_cjs = require('./chunk-AT25KOMU.cjs');
+var chunkTBH43OPO_cjs = require('./chunk-TBH43OPO.cjs');
+var chunkSVCLKDG4_cjs = require('./chunk-SVCLKDG4.cjs');
+var chunk3QWXTDLY_cjs = require('./chunk-3QWXTDLY.cjs');
+var chunkXKN6FD32_cjs = require('./chunk-XKN6FD32.cjs');
+var chunkQGO5PVJX_cjs = require('./chunk-QGO5PVJX.cjs');
+var chunkUAHIH4A6_cjs = require('./chunk-UAHIH4A6.cjs');
+var chunkPD75RTIV_cjs = require('./chunk-PD75RTIV.cjs');
 require('./chunk-Q7SFCCGT.cjs');
 var react = require('react');
 var prosemirrorView = require('prosemirror-view');
@@ -106,6 +106,7 @@ function ColorButton({ iconName, label, apply, clear, activeColor }) {
   const { run, colorPalette } = useEditorContext();
   const [open, setOpen] = react.useState(false);
   const containerRef = react.useRef(null);
+  const buttonRef = react.useRef(null);
   react.useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
@@ -120,6 +121,7 @@ function ColorButton({ iconName, label, apply, clear, activeColor }) {
     /* @__PURE__ */ jsxRuntime.jsx(
       "button",
       {
+        ref: buttonRef,
         type: "button",
         className: "rne-btn",
         title: label,
@@ -134,38 +136,51 @@ function ColorButton({ iconName, label, apply, clear, activeColor }) {
         ] })
       }
     ),
-    open && /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "rne-color-popover", role: "menu", children: [
-      colorPalette.map((color) => /* @__PURE__ */ jsxRuntime.jsx(
-        "button",
-        {
-          type: "button",
-          className: "rne-color-cell",
-          style: { background: color },
-          title: color,
-          "aria-label": color,
-          onMouseDown: (e) => e.preventDefault(),
-          onClick: () => {
-            run(apply(color));
+    open && /* @__PURE__ */ jsxRuntime.jsxs(
+      "div",
+      {
+        className: "rne-color-popover",
+        role: "menu",
+        onKeyDown: (e) => {
+          if (e.key === "Escape") {
             setOpen(false);
+            buttonRef.current?.focus();
           }
         },
-        color
-      )),
-      clear && /* @__PURE__ */ jsxRuntime.jsx(
-        "button",
-        {
-          type: "button",
-          className: "rne-color-cell",
-          style: { background: "#fff", gridColumn: "span 8", height: 22 },
-          onMouseDown: (e) => e.preventDefault(),
-          onClick: () => {
-            run(clear());
-            setOpen(false);
-          },
-          children: "\u2715"
-        }
-      )
-    ] })
+        children: [
+          colorPalette.map((color) => /* @__PURE__ */ jsxRuntime.jsx(
+            "button",
+            {
+              type: "button",
+              className: "rne-color-cell",
+              style: { background: color },
+              title: color,
+              "aria-label": color,
+              onMouseDown: (e) => e.preventDefault(),
+              onClick: () => {
+                run(apply(color));
+                setOpen(false);
+              }
+            },
+            color
+          )),
+          clear && /* @__PURE__ */ jsxRuntime.jsx(
+            "button",
+            {
+              type: "button",
+              className: "rne-color-cell",
+              style: { background: "#fff", gridColumn: "span 8", height: 22 },
+              onMouseDown: (e) => e.preventDefault(),
+              onClick: () => {
+                run(clear());
+                setOpen(false);
+              },
+              children: "\u2715"
+            }
+          )
+        ]
+      }
+    )
   ] });
 }
 var FEATURE_OF = {
@@ -233,8 +248,27 @@ function activeBlockValue(state) {
 function Toolbar({ config }) {
   const ctx = useEditorContext();
   const { state, commands, strings, features, run, fontFamilies, fontSizes } = ctx;
-  const groups = config?.groups ?? chunkAT25KOMU_cjs.DEFAULT_TOOLBAR_GROUPS;
+  const groups = config?.groups ?? chunkPD75RTIV_cjs.DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
+  const toolbarRef = react.useRef(null);
+  const onToolbarKeyDown = react.useCallback((e) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    const active = document.activeElement;
+    if (active?.tagName === "SELECT") return;
+    const root = toolbarRef.current;
+    if (!root) return;
+    const items = Array.from(root.querySelectorAll("button:not([disabled])"));
+    if (items.length === 0) return;
+    const idx = active ? items.indexOf(active) : -1;
+    if (idx === -1) return;
+    e.preventDefault();
+    let next = idx;
+    if (e.key === "ArrowRight") next = (idx + 1) % items.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + items.length) % items.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = items.length - 1;
+    items[next]?.focus();
+  }, []);
   const renderedGroups = react.useMemo(() => {
     return groups.map((group) => group.filter((id) => isItemAvailable(id, features, commands))).filter((group) => group.length > 0);
   }, [groups, features, commands]);
@@ -358,7 +392,9 @@ function Toolbar({ config }) {
             onMouseDown: (e) => e.preventDefault(),
             onClick: () => {
               const url = window.prompt(strings.imagePrompt, "https://");
-              if (url && url.trim()) run(commands.insert.image({ src: url.trim() }));
+              if (!url || !url.trim()) return;
+              const alt = window.prompt(strings.imageAltPrompt, "");
+              run(commands.insert.image({ src: url.trim(), alt: alt?.trim() || null }));
             },
             children: /* @__PURE__ */ jsxRuntime.jsx(ToolbarIcon, { name: "image" })
           },
@@ -385,9 +421,11 @@ function Toolbar({ config }) {
   return /* @__PURE__ */ jsxRuntime.jsx(
     "div",
     {
+      ref: toolbarRef,
       className: `rne-toolbar${sticky ? " rne-toolbar--sticky" : ""}`,
       role: "toolbar",
       "aria-label": "Formatting",
+      onKeyDown: onToolbarKeyDown,
       children: renderedGroups.map((group, gi) => /* @__PURE__ */ jsxRuntime.jsxs(react.Fragment, { children: [
         gi > 0 && /* @__PURE__ */ jsxRuntime.jsx("span", { className: "rne-toolbar-separator", "aria-hidden": "true" }),
         /* @__PURE__ */ jsxRuntime.jsx("div", { className: "rne-toolbar-group", children: group.map(renderItem) })
@@ -413,7 +451,16 @@ var STATUS_LABEL = {
 };
 function StatusBar({ saveStatus, hasPersistence }) {
   const { state, strings } = useEditorContext();
-  const stats = react.useMemo(() => state ? chunk4EBPHMCI_cjs.countDocument(state.doc) : null, [state]);
+  const doc = state?.doc;
+  const [stats, setStats] = react.useState(null);
+  react.useEffect(() => {
+    if (!doc) {
+      setStats(null);
+      return;
+    }
+    const id = setTimeout(() => setStats(chunkTBH43OPO_cjs.countDocument(doc)), 300);
+    return () => clearTimeout(id);
+  }, [doc]);
   return /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "rne-statusbar", children: [
     /* @__PURE__ */ jsxRuntime.jsx("span", { children: stats ? `${stats.words} ${strings.words} \xB7 ${stats.characters} ${strings.characters}` : "" }),
     hasPersistence && saveStatus !== "idle" && /* @__PURE__ */ jsxRuntime.jsxs("span", { className: "rne-status-badge", children: [
@@ -424,16 +471,16 @@ function StatusBar({ saveStatus, hasPersistence }) {
 }
 function resolveConfig(props) {
   return {
-    features: { ...chunkAT25KOMU_cjs.DEFAULT_FEATURES, ...props.features },
+    features: { ...chunkPD75RTIV_cjs.DEFAULT_FEATURES, ...props.features },
     page: {
-      ...chunkAT25KOMU_cjs.DEFAULT_PAGE,
+      ...chunkPD75RTIV_cjs.DEFAULT_PAGE,
       ...props.page,
-      margins: { ...chunkAT25KOMU_cjs.DEFAULT_PAGE.margins, ...props.page?.margins }
+      margins: { ...chunkPD75RTIV_cjs.DEFAULT_PAGE.margins, ...props.page?.margins }
     },
-    strings: { ...chunkAT25KOMU_cjs.DEFAULT_STRINGS, ...props.strings },
-    fontFamilies: props.fontFamilies ?? chunkAT25KOMU_cjs.DEFAULT_FONT_FAMILIES,
-    fontSizes: props.fontSizes ?? chunkAT25KOMU_cjs.DEFAULT_FONT_SIZES,
-    colorPalette: props.colorPalette ?? chunkAT25KOMU_cjs.DEFAULT_COLOR_PALETTE,
+    strings: { ...chunkPD75RTIV_cjs.DEFAULT_STRINGS, ...props.strings },
+    fontFamilies: props.fontFamilies ?? chunkPD75RTIV_cjs.DEFAULT_FONT_FAMILIES,
+    fontSizes: props.fontSizes ?? chunkPD75RTIV_cjs.DEFAULT_FONT_SIZES,
+    colorPalette: props.colorPalette ?? chunkPD75RTIV_cjs.DEFAULT_COLOR_PALETTE,
     editable: !(props.readOnly || props.mode === "readonly"),
     placeholder: props.placeholder
   };
@@ -449,8 +496,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   cfgRef.current = config;
   const featureKey = react.useMemo(() => JSON.stringify(config.features), [config.features]);
   const engine = react.useMemo(() => {
-    const schema = chunk4EBPHMCI_cjs.buildSchema(config.features);
-    const commands = chunk4EBPHMCI_cjs.createCommands(schema);
+    const schema = chunkTBH43OPO_cjs.buildSchema(config.features);
+    const commands = chunkTBH43OPO_cjs.createCommands(schema);
     return { schema, commands };
   }, [featureKey]);
   const [editorState, setEditorState] = react.useState(null);
@@ -458,13 +505,13 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const [ready, setReady] = react.useState(false);
   const getJSON = react.useCallback(() => {
     const view = viewRef.current;
-    return view ? view.state.doc.toJSON() : chunk4EBPHMCI_cjs.createDoc(engine.schema, null).toJSON();
+    return view ? view.state.doc.toJSON() : chunkTBH43OPO_cjs.createDoc(engine.schema, null).toJSON();
   }, [engine.schema]);
   const setContent = react.useCallback(
     (content) => {
       const view = viewRef.current;
       if (!view) return;
-      const doc = chunk4EBPHMCI_cjs.createDoc(view.state.schema, content);
+      const doc = chunkTBH43OPO_cjs.createDoc(view.state.schema, content);
       const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
       view.updateState(state);
       setEditorState(state);
@@ -474,8 +521,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const handle = react.useMemo(
     () => ({
       getJSON,
-      getText: (options) => chunk6GVC7VPR_cjs.documentToText(getJSON(), options),
-      getHTML: () => chunkF6LJJXBU_cjs.documentToHtml(getJSON()),
+      getText: (options) => chunkXKN6FD32_cjs.documentToText(getJSON(), options),
+      getHTML: () => chunkQGO5PVJX_cjs.documentToHtml(getJSON()),
       setContent,
       focus: () => viewRef.current?.focus(),
       isDirty: () => persistenceRef.current?.isDirty() ?? false,
@@ -485,7 +532,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       clearLocalData: async () => {
         await persistenceRef.current?.clearLocal();
       },
-      exportAs: (format, filename) => chunkZ5BK2HKE_cjs.exportDocument(getJSON(), format, {
+      exportAs: (format, filename) => chunkSVCLKDG4_cjs.exportDocument(getJSON(), format, {
         filename: filename ?? propsRef.current.documentId,
         page: cfgRef.current.page,
         title: filename ?? propsRef.current.documentId
@@ -500,14 +547,14 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   react.useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
-    void chunkBFSJWBBZ_cjs.preloadSanitizer();
-    const plugins = chunk4EBPHMCI_cjs.buildPlugins(engine.schema, {
+    void chunkUAHIH4A6_cjs.preloadSanitizer();
+    const plugins = chunkTBH43OPO_cjs.buildPlugins(engine.schema, {
       placeholder: cfgRef.current.placeholder,
       history: cfgRef.current.features.history,
       extraPlugins: propsRef.current.extensions?.plugins
     });
     const initialContent = propsRef.current.value ?? propsRef.current.initialContent ?? null;
-    const state = chunk4EBPHMCI_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
+    const state = chunkTBH43OPO_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
     const view = new prosemirrorView.EditorView(mount, {
       state,
       editable: () => !(propsRef.current.readOnly || propsRef.current.mode === "readonly"),
@@ -515,7 +562,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
         class: "rne-prosemirror",
         role: "textbox",
         "aria-multiline": "true",
-        "aria-label": propsRef.current.ariaLabel ?? "Document editor"
+        "aria-label": propsRef.current.ariaLabel ?? "Document editor",
+        dir: propsRef.current.dir ?? "ltr"
       },
       dispatchTransaction(tr) {
         const v = viewRef.current;
@@ -554,20 +602,51 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     const documentId = props.documentId;
     const persistenceEnabled = props.persistence?.enabled ?? !!documentId;
     if (!documentId || !persistenceEnabled || !ready) return;
-    const store = props.persistence?.store ?? new chunkZHYBQNX4_cjs.IndexedDBStore();
-    const persistence = new chunkZHYBQNX4_cjs.DocumentPersistence({
+    const store = props.persistence?.store ?? new chunk3QWXTDLY_cjs.IndexedDBStore();
+    const sync = props.sync;
+    const auto = sync?.auto ?? true;
+    let engine2 = null;
+    let monitor = null;
+    const handleStatus = (status, detail) => {
+      setSaveStatus(status);
+      propsRef.current.onSaveStatusChange?.(status, detail);
+      if (status === "savedLocal" && engine2 && auto && (monitor?.isOnline() ?? true)) {
+        void engine2.flush();
+      }
+    };
+    const persistence = new chunk3QWXTDLY_cjs.DocumentPersistence({
       documentId,
       store,
       debounceMs: props.persistence?.debounceMs,
       metadata: props.metadata,
-      onStatus: (status, detail) => {
-        setSaveStatus(status);
-        propsRef.current.onSaveStatusChange?.(status, detail);
-      }
+      onStatus: handleStatus
     });
     persistenceRef.current = persistence;
+    if (sync?.remote) {
+      engine2 = new chunk3QWXTDLY_cjs.SyncEngine({
+        store,
+        remote: sync.remote,
+        maxAttempts: sync.maxAttempts,
+        onStatus: handleStatus,
+        onConflict: sync.onConflict
+      });
+      const remotePing = sync.remote.ping?.bind(sync.remote);
+      monitor = new chunk3QWXTDLY_cjs.ConnectivityMonitor({
+        ping: remotePing,
+        intervalMs: sync.pingIntervalMs,
+        onChange: (online) => {
+          if (online) {
+            if (auto && engine2) void engine2.flush();
+          } else {
+            handleStatus("offline");
+          }
+        }
+      });
+      monitor.start();
+      if (auto) void engine2.flush();
+    }
     if (props.persistence?.requestPersistent !== false) {
-      void chunkZHYBQNX4_cjs.requestPersistentStorage();
+      void chunk3QWXTDLY_cjs.requestPersistentStorage();
     }
     let cancelled = false;
     void (async () => {
@@ -579,17 +658,19 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     })();
     return () => {
       cancelled = true;
+      monitor?.stop();
+      engine2?.cancel();
       void persistence.destroy();
       persistenceRef.current = null;
     };
-  }, [props.documentId, ready]);
+  }, [props.documentId, ready, props.sync?.remote]);
   react.useEffect(() => {
     const view = viewRef.current;
     if (!view || props.value == null) return;
     const current = JSON.stringify(view.state.doc.toJSON());
     const next = JSON.stringify(props.value);
     if (current === next) return;
-    const doc = chunk4EBPHMCI_cjs.createDoc(view.state.schema, props.value);
+    const doc = chunkTBH43OPO_cjs.createDoc(view.state.schema, props.value);
     const selectionPos = Math.min(view.state.selection.from, doc.content.size);
     const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
     const withSel = state.apply(
@@ -621,11 +702,11 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     }),
     [editorState, engine, config, runCommand]
   );
-  const { width } = chunkAT25KOMU_cjs.resolvePageDimensions(config.page);
+  const { width } = chunkPD75RTIV_cjs.resolvePageDimensions(config.page);
   const showChrome = config.page.showPageChrome;
   const rootStyle = react.useMemo(
     () => ({
-      ...chunkAT25KOMU_cjs.themeToCssVars(props.theme),
+      ...chunkPD75RTIV_cjs.themeToCssVars(props.theme),
       "--rne-page-width": `${width}mm`,
       "--rne-page-padding": `${config.page.margins.top}mm ${config.page.margins.right}mm ${config.page.margins.bottom}mm ${config.page.margins.left}mm`,
       ...props.style
@@ -640,6 +721,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       className: `rne-root${props.className ? ` ${props.className}` : ""}`,
       style: rootStyle,
       "data-ready": ready,
+      dir: props.dir ?? "ltr",
       children: [
         toolbarEnabled && /* @__PURE__ */ jsxRuntime.jsx(Toolbar, { config: props.toolbar || void 0 }),
         /* @__PURE__ */ jsxRuntime.jsx("div", { className: `rne-canvas${showChrome ? "" : " rne-canvas--plain"}`, children: /* @__PURE__ */ jsxRuntime.jsx("div", { className: "rne-page", children: /* @__PURE__ */ jsxRuntime.jsx("div", { ref: mountRef, className: "rne-mount" }) }) }),
@@ -654,147 +736,147 @@ var Editor = react.forwardRef(function Editor2(props, ref) {
 
 Object.defineProperty(exports, "buildPlugins", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.buildPlugins; }
+  get: function () { return chunkTBH43OPO_cjs.buildPlugins; }
 });
 Object.defineProperty(exports, "buildSchema", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.buildSchema; }
+  get: function () { return chunkTBH43OPO_cjs.buildSchema; }
 });
 Object.defineProperty(exports, "countDocument", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.countDocument; }
+  get: function () { return chunkTBH43OPO_cjs.countDocument; }
 });
 Object.defineProperty(exports, "createCommands", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.createCommands; }
+  get: function () { return chunkTBH43OPO_cjs.createCommands; }
 });
 Object.defineProperty(exports, "createDoc", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.createDoc; }
+  get: function () { return chunkTBH43OPO_cjs.createDoc; }
 });
 Object.defineProperty(exports, "createEditorState", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.createEditorState; }
+  get: function () { return chunkTBH43OPO_cjs.createEditorState; }
 });
 Object.defineProperty(exports, "defaultSchema", {
   enumerable: true,
-  get: function () { return chunk4EBPHMCI_cjs.defaultSchema; }
+  get: function () { return chunkTBH43OPO_cjs.defaultSchema; }
 });
 Object.defineProperty(exports, "downloadBlob", {
   enumerable: true,
-  get: function () { return chunkZ5BK2HKE_cjs.downloadBlob; }
+  get: function () { return chunkSVCLKDG4_cjs.downloadBlob; }
 });
 Object.defineProperty(exports, "downloadText", {
   enumerable: true,
-  get: function () { return chunkZ5BK2HKE_cjs.downloadText; }
+  get: function () { return chunkSVCLKDG4_cjs.downloadText; }
 });
 Object.defineProperty(exports, "exportDocument", {
   enumerable: true,
-  get: function () { return chunkZ5BK2HKE_cjs.exportDocument; }
+  get: function () { return chunkSVCLKDG4_cjs.exportDocument; }
 });
 Object.defineProperty(exports, "printDocumentToPdf", {
   enumerable: true,
-  get: function () { return chunkZ5BK2HKE_cjs.printDocumentToPdf; }
+  get: function () { return chunkSVCLKDG4_cjs.printDocumentToPdf; }
 });
 Object.defineProperty(exports, "ConflictError", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.ConflictError; }
+  get: function () { return chunk3QWXTDLY_cjs.ConflictError; }
 });
 Object.defineProperty(exports, "ConnectivityMonitor", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.ConnectivityMonitor; }
+  get: function () { return chunk3QWXTDLY_cjs.ConnectivityMonitor; }
 });
 Object.defineProperty(exports, "DocumentPersistence", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.DocumentPersistence; }
+  get: function () { return chunk3QWXTDLY_cjs.DocumentPersistence; }
 });
 Object.defineProperty(exports, "IndexedDBStore", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.IndexedDBStore; }
+  get: function () { return chunk3QWXTDLY_cjs.IndexedDBStore; }
 });
 Object.defineProperty(exports, "MemoryStore", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.MemoryStore; }
+  get: function () { return chunk3QWXTDLY_cjs.MemoryStore; }
 });
 Object.defineProperty(exports, "SyncEngine", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.SyncEngine; }
+  get: function () { return chunk3QWXTDLY_cjs.SyncEngine; }
 });
 Object.defineProperty(exports, "requestPersistentStorage", {
   enumerable: true,
-  get: function () { return chunkZHYBQNX4_cjs.requestPersistentStorage; }
+  get: function () { return chunk3QWXTDLY_cjs.requestPersistentStorage; }
 });
 Object.defineProperty(exports, "documentToDocxBlob", {
   enumerable: true,
-  get: function () { return chunk6GVC7VPR_cjs.documentToDocxBlob; }
+  get: function () { return chunkXKN6FD32_cjs.documentToDocxBlob; }
 });
 Object.defineProperty(exports, "documentToDocxBuffer", {
   enumerable: true,
-  get: function () { return chunk6GVC7VPR_cjs.documentToDocxBuffer; }
+  get: function () { return chunkXKN6FD32_cjs.documentToDocxBuffer; }
 });
 Object.defineProperty(exports, "documentToText", {
   enumerable: true,
-  get: function () { return chunk6GVC7VPR_cjs.documentToText; }
+  get: function () { return chunkXKN6FD32_cjs.documentToText; }
 });
 Object.defineProperty(exports, "buildPrintDocument", {
   enumerable: true,
-  get: function () { return chunkF6LJJXBU_cjs.buildPrintDocument; }
+  get: function () { return chunkQGO5PVJX_cjs.buildPrintDocument; }
 });
 Object.defineProperty(exports, "documentToHtml", {
   enumerable: true,
-  get: function () { return chunkF6LJJXBU_cjs.documentToHtml; }
+  get: function () { return chunkQGO5PVJX_cjs.documentToHtml; }
 });
 Object.defineProperty(exports, "sanitizeHtml", {
   enumerable: true,
-  get: function () { return chunkBFSJWBBZ_cjs.sanitizeHtml; }
+  get: function () { return chunkUAHIH4A6_cjs.sanitizeHtml; }
 });
 Object.defineProperty(exports, "sanitizeImageSrc", {
   enumerable: true,
-  get: function () { return chunkBFSJWBBZ_cjs.sanitizeImageSrc; }
+  get: function () { return chunkUAHIH4A6_cjs.sanitizeImageSrc; }
 });
 Object.defineProperty(exports, "sanitizeUrl", {
   enumerable: true,
-  get: function () { return chunkBFSJWBBZ_cjs.sanitizeUrl; }
+  get: function () { return chunkUAHIH4A6_cjs.sanitizeUrl; }
 });
 Object.defineProperty(exports, "DEFAULT_COLOR_PALETTE", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_COLOR_PALETTE; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_COLOR_PALETTE; }
 });
 Object.defineProperty(exports, "DEFAULT_FEATURES", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_FEATURES; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_FEATURES; }
 });
 Object.defineProperty(exports, "DEFAULT_FONT_FAMILIES", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_FONT_FAMILIES; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_FONT_FAMILIES; }
 });
 Object.defineProperty(exports, "DEFAULT_FONT_SIZES", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_FONT_SIZES; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_FONT_SIZES; }
 });
 Object.defineProperty(exports, "DEFAULT_PAGE", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_PAGE; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_PAGE; }
 });
 Object.defineProperty(exports, "DEFAULT_STRINGS", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_STRINGS; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_STRINGS; }
 });
 Object.defineProperty(exports, "DEFAULT_TOOLBAR_GROUPS", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.DEFAULT_TOOLBAR_GROUPS; }
+  get: function () { return chunkPD75RTIV_cjs.DEFAULT_TOOLBAR_GROUPS; }
 });
 Object.defineProperty(exports, "PAGE_DIMENSIONS_MM", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.PAGE_DIMENSIONS_MM; }
+  get: function () { return chunkPD75RTIV_cjs.PAGE_DIMENSIONS_MM; }
 });
 Object.defineProperty(exports, "resolvePageDimensions", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.resolvePageDimensions; }
+  get: function () { return chunkPD75RTIV_cjs.resolvePageDimensions; }
 });
 Object.defineProperty(exports, "themeToCssVars", {
   enumerable: true,
-  get: function () { return chunkAT25KOMU_cjs.themeToCssVars; }
+  get: function () { return chunkPD75RTIV_cjs.themeToCssVars; }
 });
 exports.Editor = Editor;
 exports.EditorContext = EditorContext;

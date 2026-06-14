@@ -89,6 +89,8 @@ export default function MyEditor() {
 | `theme` | `ThemeTokens` | CSS-variable design tokens. |
 | `strings` | `Partial<EditorStrings>` | Localized UI strings. |
 | `persistence` | `PersistenceConfig` | Local store, autosave, adapter. |
+| `sync` | `SyncConfig` | REST adapter; offline edits auto-upload on reconnect. |
+| `dir` | `'ltr' \| 'rtl' \| 'auto'` | Text direction (RTL aware). |
 | `extensions` | `EditorExtensions` | Custom PM plugins, custom DOCX mappings. |
 | `onReady` / `onSelectionChange` / `onSaveStatusChange` / `onError` | events | Lifecycle hooks. |
 

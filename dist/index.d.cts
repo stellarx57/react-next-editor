@@ -3,14 +3,14 @@ import { Component, ReactNode, ErrorInfo, JSX } from 'react';
 import { EditorState, Plugin, Command } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Schema } from 'prosemirror-model';
-import { D as DocumentJSON, S as SaveStatus, E as EditorMode, F as FeatureFlags, P as PageConfig, c as ToolbarConfig, T as ThemeTokens, a as EditorStrings } from './types-D1QUFKtw.cjs';
-export { b as PageSize, d as ToolbarItemId } from './types-D1QUFKtw.cjs';
-import { C as CommandSet, E as EditorCommand } from './sanitize-C41E6-tZ.cjs';
-export { D as DEFAULT_COLOR_PALETTE, b as DEFAULT_FEATURES, c as DEFAULT_FONT_FAMILIES, d as DEFAULT_FONT_SIZES, e as DEFAULT_PAGE, f as DEFAULT_STRINGS, g as DEFAULT_TOOLBAR_GROUPS, P as PAGE_DIMENSIONS_MM, m as buildPlugins, n as buildSchema, q as countDocument, r as createCommands, s as createDoc, t as createEditorState, w as defaultSchema, R as resolvePageDimensions, S as sanitizeHtml, V as sanitizeImageSrc, W as sanitizeUrl, _ as themeToCssVars } from './sanitize-C41E6-tZ.cjs';
-import { T as TextConversionOptions, b as DocxNodeConverter } from './docx-Br94uV8d.cjs';
-export { a as DocxExportOptions, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from './docx-Br94uV8d.cjs';
-import { LocalStoreAdapter } from './persistence/index.cjs';
-export { AssetUploadAdapter, ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, OutboxEntry, RemoteSaveResult, RemoteSyncAdapter, SaveStatusListener, StoredDocument, SyncEngine, requestPersistentStorage } from './persistence/index.cjs';
+import { D as DocumentJSON, S as SaveStatus, E as EditorMode, F as FeatureFlags, P as PageConfig, c as ToolbarConfig, T as ThemeTokens, a as EditorStrings } from './types--ae1gYNt.cjs';
+export { b as PageSize, d as ToolbarItemId } from './types--ae1gYNt.cjs';
+import { C as CommandSet, E as EditorCommand } from './sanitize-Bub3nwsz.cjs';
+export { D as DEFAULT_COLOR_PALETTE, b as DEFAULT_FEATURES, c as DEFAULT_FONT_FAMILIES, d as DEFAULT_FONT_SIZES, e as DEFAULT_PAGE, f as DEFAULT_STRINGS, g as DEFAULT_TOOLBAR_GROUPS, P as PAGE_DIMENSIONS_MM, m as buildPlugins, n as buildSchema, q as countDocument, r as createCommands, s as createDoc, t as createEditorState, w as defaultSchema, R as resolvePageDimensions, S as sanitizeHtml, V as sanitizeImageSrc, W as sanitizeUrl, _ as themeToCssVars } from './sanitize-Bub3nwsz.cjs';
+import { T as TextConversionOptions, b as DocxNodeConverter } from './docx-ipBJ6tJU.cjs';
+export { a as DocxExportOptions, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from './docx-ipBJ6tJU.cjs';
+import { LocalStoreAdapter, RemoteSyncAdapter, StoredDocument } from './persistence/index.cjs';
+export { AssetUploadAdapter, ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, OutboxEntry, RemoteSaveResult, SaveStatusListener, SyncEngine, requestPersistentStorage } from './persistence/index.cjs';
 export { ExportFormat, PdfPrintOptions, buildPrintDocument, documentToHtml, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './export/index.cjs';
 import 'docx';
 
@@ -63,6 +63,26 @@ interface EditorExtensions {
     /** Custom DOCX node converters keyed by node type (F-6.16). */
     docxNodeConverters?: Record<string, DocxNodeConverter>;
 }
+/**
+ * Synchronization configuration (F-9.6–F-9.9, F-9.14). When provided alongside
+ * a persisted `documentId`, the editor owns a connectivity monitor and a sync
+ * engine: offline edits queue in the durable outbox and upload automatically on
+ * reconnect, with no user action. Surfaces status through `onSaveStatusChange`.
+ */
+interface SyncConfig {
+    /** REST adapter that persists the document JSON to your API (F-9.7). */
+    remote: RemoteSyncAdapter;
+    /** Auto-flush the outbox on reconnect and after each local save. Default true. */
+    auto?: boolean;
+    /** Connectivity ping interval in ms (default 30000). */
+    pingIntervalMs?: number;
+    /** Max upload attempts before a document is parked for manual retry (default 6). */
+    maxAttempts?: number;
+    /** Invoked when a version conflict is detected (F-9.9). */
+    onConflict?: (local: StoredDocument, remote?: {
+        version: string | number;
+    }) => void;
+}
 /** Local persistence configuration (F-8.x, F-9.2). */
 interface PersistenceConfig {
     /** Enable durable local autosave. Default true when a documentId is given. */
@@ -113,6 +133,8 @@ interface EditorProps extends EditorEvents {
     extensions?: EditorExtensions;
     /** Local persistence configuration. */
     persistence?: PersistenceConfig;
+    /** Synchronization to a REST API (offline edits auto-upload on reconnect). */
+    sync?: SyncConfig;
     /** Per-document metadata stored alongside the content. */
     metadata?: Record<string, unknown>;
     /** Root element class and inline style (theming/layout). */
@@ -120,6 +142,8 @@ interface EditorProps extends EditorEvents {
     style?: React.CSSProperties;
     /** Accessible label for the editing region (NF-4). */
     ariaLabel?: string;
+    /** Text direction for the document (NF-6, RTL awareness). Default 'ltr'. */
+    dir?: 'ltr' | 'rtl' | 'auto';
 }
 /** Value provided through {@link EditorContext} to toolbar and children. */
 interface EditorContextValue {
@@ -192,7 +216,13 @@ interface StatusBarProps {
     saveStatus: SaveStatus;
     hasPersistence: boolean;
 }
-/** Word/character count (F-4.5) and visible save/sync status (F-9.4, NF-10). */
+/**
+ * Word/character count (F-4.5) and visible save/sync status (F-9.4, NF-10).
+ *
+ * The count is an O(n) document walk, so it is recomputed only when the document
+ * actually changes (not on selection changes) and is debounced — keeping typing
+ * responsive on large documents (NF-1).
+ */
 declare function StatusBar({ saveStatus, hasPersistence }: StatusBarProps): react.JSX.Element;
 
-export { CommandSet, DocumentJSON, DocxNodeConverter, Editor, EditorCommand, EditorContext, type EditorContextValue, EditorErrorBoundary, type EditorEvents, type EditorExtensions, EditorMode, type EditorProps, type EditorRef, EditorStrings, FeatureFlags, LocalStoreAdapter, PageConfig, type PersistenceConfig, SaveStatus, StatusBar, TextConversionOptions, ThemeTokens, Toolbar, ToolbarButton, ToolbarConfig, ToolbarIcon, useEditorContext };
+export { CommandSet, DocumentJSON, DocxNodeConverter, Editor, EditorCommand, EditorContext, type EditorContextValue, EditorErrorBoundary, type EditorEvents, type EditorExtensions, EditorMode, type EditorProps, type EditorRef, EditorStrings, FeatureFlags, LocalStoreAdapter, PageConfig, type PersistenceConfig, RemoteSyncAdapter, SaveStatus, StatusBar, StoredDocument, type SyncConfig, TextConversionOptions, ThemeTokens, Toolbar, ToolbarButton, ToolbarConfig, ToolbarIcon, useEditorContext };

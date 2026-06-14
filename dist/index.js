@@ -1,17 +1,17 @@
-import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-NR6UA3IR.js';
-export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-NR6UA3IR.js';
-import { exportDocument } from './chunk-HRVQGBSO.js';
-export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-HRVQGBSO.js';
-import { IndexedDBStore, DocumentPersistence, requestPersistentStorage } from './chunk-WSWRQZS3.js';
-export { ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, SyncEngine, requestPersistentStorage } from './chunk-WSWRQZS3.js';
-import { documentToText } from './chunk-7ATKBEH3.js';
-export { documentToDocxBlob, documentToDocxBuffer, documentToText } from './chunk-7ATKBEH3.js';
-import { documentToHtml } from './chunk-PDBEZLLY.js';
-export { buildPrintDocument, documentToHtml } from './chunk-PDBEZLLY.js';
-import { preloadSanitizer } from './chunk-MWO7FWCI.js';
-export { sanitizeHtml, sanitizeImageSrc, sanitizeUrl } from './chunk-MWO7FWCI.js';
-import { resolvePageDimensions, themeToCssVars, DEFAULT_COLOR_PALETTE, DEFAULT_FONT_SIZES, DEFAULT_FONT_FAMILIES, DEFAULT_STRINGS, DEFAULT_PAGE, DEFAULT_FEATURES, DEFAULT_TOOLBAR_GROUPS } from './chunk-LBY6ULPF.js';
-export { DEFAULT_COLOR_PALETTE, DEFAULT_FEATURES, DEFAULT_FONT_FAMILIES, DEFAULT_FONT_SIZES, DEFAULT_PAGE, DEFAULT_STRINGS, DEFAULT_TOOLBAR_GROUPS, PAGE_DIMENSIONS_MM, resolvePageDimensions, themeToCssVars } from './chunk-LBY6ULPF.js';
+import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-XXHLJ6HE.js';
+export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-XXHLJ6HE.js';
+import { exportDocument } from './chunk-CELJ2AMM.js';
+export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-CELJ2AMM.js';
+import { IndexedDBStore, DocumentPersistence, SyncEngine, ConnectivityMonitor, requestPersistentStorage } from './chunk-O4GTLC3T.js';
+export { ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, SyncEngine, requestPersistentStorage } from './chunk-O4GTLC3T.js';
+import { documentToText } from './chunk-5XDDJL5V.js';
+export { documentToDocxBlob, documentToDocxBuffer, documentToText } from './chunk-5XDDJL5V.js';
+import { documentToHtml } from './chunk-IJ6OF636.js';
+export { buildPrintDocument, documentToHtml } from './chunk-IJ6OF636.js';
+import { preloadSanitizer } from './chunk-RDDFH5FA.js';
+export { sanitizeHtml, sanitizeImageSrc, sanitizeUrl } from './chunk-RDDFH5FA.js';
+import { resolvePageDimensions, themeToCssVars, DEFAULT_COLOR_PALETTE, DEFAULT_FONT_SIZES, DEFAULT_FONT_FAMILIES, DEFAULT_STRINGS, DEFAULT_PAGE, DEFAULT_FEATURES, DEFAULT_TOOLBAR_GROUPS } from './chunk-SKCOHLJH.js';
+export { DEFAULT_COLOR_PALETTE, DEFAULT_FEATURES, DEFAULT_FONT_FAMILIES, DEFAULT_FONT_SIZES, DEFAULT_PAGE, DEFAULT_STRINGS, DEFAULT_TOOLBAR_GROUPS, PAGE_DIMENSIONS_MM, resolvePageDimensions, themeToCssVars } from './chunk-SKCOHLJH.js';
 import './chunk-PZ5AY32C.js';
 import { createContext, forwardRef, useRef, useMemo, useState, useCallback, useImperativeHandle, useEffect, Fragment, Component, useContext } from 'react';
 import { EditorView } from 'prosemirror-view';
@@ -111,6 +111,7 @@ function ColorButton({ iconName, label, apply, clear, activeColor }) {
   const { run, colorPalette } = useEditorContext();
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const buttonRef = useRef(null);
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => {
@@ -125,6 +126,7 @@ function ColorButton({ iconName, label, apply, clear, activeColor }) {
     /* @__PURE__ */ jsx(
       "button",
       {
+        ref: buttonRef,
         type: "button",
         className: "rne-btn",
         title: label,
@@ -139,38 +141,51 @@ function ColorButton({ iconName, label, apply, clear, activeColor }) {
         ] })
       }
     ),
-    open && /* @__PURE__ */ jsxs("div", { className: "rne-color-popover", role: "menu", children: [
-      colorPalette.map((color) => /* @__PURE__ */ jsx(
-        "button",
-        {
-          type: "button",
-          className: "rne-color-cell",
-          style: { background: color },
-          title: color,
-          "aria-label": color,
-          onMouseDown: (e) => e.preventDefault(),
-          onClick: () => {
-            run(apply(color));
+    open && /* @__PURE__ */ jsxs(
+      "div",
+      {
+        className: "rne-color-popover",
+        role: "menu",
+        onKeyDown: (e) => {
+          if (e.key === "Escape") {
             setOpen(false);
+            buttonRef.current?.focus();
           }
         },
-        color
-      )),
-      clear && /* @__PURE__ */ jsx(
-        "button",
-        {
-          type: "button",
-          className: "rne-color-cell",
-          style: { background: "#fff", gridColumn: "span 8", height: 22 },
-          onMouseDown: (e) => e.preventDefault(),
-          onClick: () => {
-            run(clear());
-            setOpen(false);
-          },
-          children: "\u2715"
-        }
-      )
-    ] })
+        children: [
+          colorPalette.map((color) => /* @__PURE__ */ jsx(
+            "button",
+            {
+              type: "button",
+              className: "rne-color-cell",
+              style: { background: color },
+              title: color,
+              "aria-label": color,
+              onMouseDown: (e) => e.preventDefault(),
+              onClick: () => {
+                run(apply(color));
+                setOpen(false);
+              }
+            },
+            color
+          )),
+          clear && /* @__PURE__ */ jsx(
+            "button",
+            {
+              type: "button",
+              className: "rne-color-cell",
+              style: { background: "#fff", gridColumn: "span 8", height: 22 },
+              onMouseDown: (e) => e.preventDefault(),
+              onClick: () => {
+                run(clear());
+                setOpen(false);
+              },
+              children: "\u2715"
+            }
+          )
+        ]
+      }
+    )
   ] });
 }
 var FEATURE_OF = {
@@ -240,6 +255,25 @@ function Toolbar({ config }) {
   const { state, commands, strings, features, run, fontFamilies, fontSizes } = ctx;
   const groups = config?.groups ?? DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
+  const toolbarRef = useRef(null);
+  const onToolbarKeyDown = useCallback((e) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    const active = document.activeElement;
+    if (active?.tagName === "SELECT") return;
+    const root = toolbarRef.current;
+    if (!root) return;
+    const items = Array.from(root.querySelectorAll("button:not([disabled])"));
+    if (items.length === 0) return;
+    const idx = active ? items.indexOf(active) : -1;
+    if (idx === -1) return;
+    e.preventDefault();
+    let next = idx;
+    if (e.key === "ArrowRight") next = (idx + 1) % items.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + items.length) % items.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = items.length - 1;
+    items[next]?.focus();
+  }, []);
   const renderedGroups = useMemo(() => {
     return groups.map((group) => group.filter((id) => isItemAvailable(id, features, commands))).filter((group) => group.length > 0);
   }, [groups, features, commands]);
@@ -363,7 +397,9 @@ function Toolbar({ config }) {
             onMouseDown: (e) => e.preventDefault(),
             onClick: () => {
               const url = window.prompt(strings.imagePrompt, "https://");
-              if (url && url.trim()) run(commands.insert.image({ src: url.trim() }));
+              if (!url || !url.trim()) return;
+              const alt = window.prompt(strings.imageAltPrompt, "");
+              run(commands.insert.image({ src: url.trim(), alt: alt?.trim() || null }));
             },
             children: /* @__PURE__ */ jsx(ToolbarIcon, { name: "image" })
           },
@@ -390,9 +426,11 @@ function Toolbar({ config }) {
   return /* @__PURE__ */ jsx(
     "div",
     {
+      ref: toolbarRef,
       className: `rne-toolbar${sticky ? " rne-toolbar--sticky" : ""}`,
       role: "toolbar",
       "aria-label": "Formatting",
+      onKeyDown: onToolbarKeyDown,
       children: renderedGroups.map((group, gi) => /* @__PURE__ */ jsxs(Fragment, { children: [
         gi > 0 && /* @__PURE__ */ jsx("span", { className: "rne-toolbar-separator", "aria-hidden": "true" }),
         /* @__PURE__ */ jsx("div", { className: "rne-toolbar-group", children: group.map(renderItem) })
@@ -418,7 +456,16 @@ var STATUS_LABEL = {
 };
 function StatusBar({ saveStatus, hasPersistence }) {
   const { state, strings } = useEditorContext();
-  const stats = useMemo(() => state ? countDocument(state.doc) : null, [state]);
+  const doc = state?.doc;
+  const [stats, setStats] = useState(null);
+  useEffect(() => {
+    if (!doc) {
+      setStats(null);
+      return;
+    }
+    const id = setTimeout(() => setStats(countDocument(doc)), 300);
+    return () => clearTimeout(id);
+  }, [doc]);
   return /* @__PURE__ */ jsxs("div", { className: "rne-statusbar", children: [
     /* @__PURE__ */ jsx("span", { children: stats ? `${stats.words} ${strings.words} \xB7 ${stats.characters} ${strings.characters}` : "" }),
     hasPersistence && saveStatus !== "idle" && /* @__PURE__ */ jsxs("span", { className: "rne-status-badge", children: [
@@ -520,7 +567,8 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
         class: "rne-prosemirror",
         role: "textbox",
         "aria-multiline": "true",
-        "aria-label": propsRef.current.ariaLabel ?? "Document editor"
+        "aria-label": propsRef.current.ariaLabel ?? "Document editor",
+        dir: propsRef.current.dir ?? "ltr"
       },
       dispatchTransaction(tr) {
         const v = viewRef.current;
@@ -560,17 +608,48 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
     const persistenceEnabled = props.persistence?.enabled ?? !!documentId;
     if (!documentId || !persistenceEnabled || !ready) return;
     const store = props.persistence?.store ?? new IndexedDBStore();
+    const sync = props.sync;
+    const auto = sync?.auto ?? true;
+    let engine2 = null;
+    let monitor = null;
+    const handleStatus = (status, detail) => {
+      setSaveStatus(status);
+      propsRef.current.onSaveStatusChange?.(status, detail);
+      if (status === "savedLocal" && engine2 && auto && (monitor?.isOnline() ?? true)) {
+        void engine2.flush();
+      }
+    };
     const persistence = new DocumentPersistence({
       documentId,
       store,
       debounceMs: props.persistence?.debounceMs,
       metadata: props.metadata,
-      onStatus: (status, detail) => {
-        setSaveStatus(status);
-        propsRef.current.onSaveStatusChange?.(status, detail);
-      }
+      onStatus: handleStatus
     });
     persistenceRef.current = persistence;
+    if (sync?.remote) {
+      engine2 = new SyncEngine({
+        store,
+        remote: sync.remote,
+        maxAttempts: sync.maxAttempts,
+        onStatus: handleStatus,
+        onConflict: sync.onConflict
+      });
+      const remotePing = sync.remote.ping?.bind(sync.remote);
+      monitor = new ConnectivityMonitor({
+        ping: remotePing,
+        intervalMs: sync.pingIntervalMs,
+        onChange: (online) => {
+          if (online) {
+            if (auto && engine2) void engine2.flush();
+          } else {
+            handleStatus("offline");
+          }
+        }
+      });
+      monitor.start();
+      if (auto) void engine2.flush();
+    }
     if (props.persistence?.requestPersistent !== false) {
       void requestPersistentStorage();
     }
@@ -584,10 +663,12 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
     })();
     return () => {
       cancelled = true;
+      monitor?.stop();
+      engine2?.cancel();
       void persistence.destroy();
       persistenceRef.current = null;
     };
-  }, [props.documentId, ready]);
+  }, [props.documentId, ready, props.sync?.remote]);
   useEffect(() => {
     const view = viewRef.current;
     if (!view || props.value == null) return;
@@ -645,6 +726,7 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
       className: `rne-root${props.className ? ` ${props.className}` : ""}`,
       style: rootStyle,
       "data-ready": ready,
+      dir: props.dir ?? "ltr",
       children: [
         toolbarEnabled && /* @__PURE__ */ jsx(Toolbar, { config: props.toolbar || void 0 }),
         /* @__PURE__ */ jsx("div", { className: `rne-canvas${showChrome ? "" : " rne-canvas--plain"}`, children: /* @__PURE__ */ jsx("div", { className: "rne-page", children: /* @__PURE__ */ jsx("div", { ref: mountRef, className: "rne-mount" }) }) }),
