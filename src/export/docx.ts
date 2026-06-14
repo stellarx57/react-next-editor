@@ -1,3 +1,4 @@
+import type * as DocxNamespace from 'docx';
 import type { DocumentJSON, PageConfig } from '../config/types';
 import { DEFAULT_PAGE, resolvePageDimensions } from '../config/defaults';
 import { sanitizeUrl } from '../security/sanitize';
@@ -28,7 +29,7 @@ export interface DocxContext {
   docx: DocxModule;
 }
 
-type DocxModule = typeof import('docx');
+type DocxModule = typeof DocxNamespace;
 
 let docxModulePromise: Promise<DocxModule> | null = null;
 async function loadDocx(): Promise<DocxModule> {
