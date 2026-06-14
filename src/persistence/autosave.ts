@@ -148,6 +148,13 @@ export class DocumentPersistence {
     this.emit('synced');
   }
 
+  /** Purge this document's locally-persisted data and outbox entry (F-12.7). */
+  async clearLocal(): Promise<void> {
+    await this.store.deleteDocument(this.id);
+    await this.store.dequeue(this.id);
+    this.current = null;
+  }
+
   /** Stop the autosave timer and flush pending work. */
   async destroy(): Promise<void> {
     this.destroyed = true;

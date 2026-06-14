@@ -1,0 +1,589 @@
+/**
+ * react-next-editor stylesheet.
+ *
+ * Theming is driven entirely by CSS custom properties (F-10.5); override any
+ * `--rne-*` token on `.rne-root` (or a parent) to restyle without forking. All
+ * selectors are scoped under `.rne-root` so multiple instances and the host app
+ * never collide (F-10.10). Fully responsive (mobile → desktop).
+ */
+
+.rne-root {
+  /* ---- Design tokens (override to theme) ---- */
+  --rne-font-family: 'Times New Roman', Georgia, serif;
+  --rne-font-size: 12pt;
+  --rne-text-color: #1a1a1a;
+  --rne-background: #f3f4f6;
+  --rne-canvas-background: #f3f4f6;
+  --rne-page-background: #ffffff;
+  --rne-accent: #df4a36;
+  --rne-toolbar-background: #ffffff;
+  --rne-toolbar-color: #2c2c2c;
+  --rne-toolbar-active-background: #fde8e4;
+  --rne-border-color: #d8dadf;
+  --rne-border-radius: 6px;
+  --rne-selection-color: #b9d4ff;
+  --rne-page-width: 210mm;
+  --rne-page-padding: 25.4mm;
+  --rne-toolbar-height: 44px;
+
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  color: var(--rne-text-color);
+  background: var(--rne-background);
+  box-sizing: border-box;
+}
+
+.rne-root *,
+.rne-root *::before,
+.rne-root *::after {
+  box-sizing: border-box;
+}
+
+/* ---- Toolbar ---- */
+.rne-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: var(--rne-toolbar-background);
+  color: var(--rne-toolbar-color);
+  border-bottom: 1px solid var(--rne-border-color);
+  min-height: var(--rne-toolbar-height);
+}
+
+.rne-toolbar--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.rne-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.rne-toolbar-separator {
+  width: 1px;
+  align-self: stretch;
+  margin: 4px 4px;
+  background: var(--rne-border-color);
+}
+
+.rne-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--rne-border-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.rne-btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.rne-btn:focus-visible {
+  outline: 2px solid var(--rne-accent);
+  outline-offset: 1px;
+}
+
+.rne-btn--active {
+  background: var(--rne-toolbar-active-background);
+  border-color: var(--rne-accent);
+  color: var(--rne-accent);
+}
+
+.rne-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.rne-btn-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  fill: currentColor;
+}
+
+.rne-select {
+  height: 30px;
+  max-width: 150px;
+  padding: 0 4px;
+  border: 1px solid var(--rne-border-color);
+  border-radius: var(--rne-border-radius);
+  background: var(--rne-toolbar-background);
+  color: inherit;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.rne-color-btn {
+  position: relative;
+}
+
+.rne-color-swatch {
+  display: block;
+  width: 16px;
+  height: 4px;
+  margin-top: 2px;
+  border-radius: 1px;
+}
+
+.rne-color-popover {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  margin-top: 2px;
+  padding: 8px;
+  background: var(--rne-toolbar-background);
+  border: 1px solid var(--rne-border-color);
+  border-radius: var(--rne-border-radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.rne-color-cell {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.rne-color-cell:hover {
+  transform: scale(1.12);
+}
+
+/* ---- Canvas + page surface (single-flow model, G-1 = A) ---- */
+.rne-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  background: var(--rne-canvas-background);
+  padding: 24px 16px;
+  display: flex;
+  justify-content: center;
+  -webkit-overflow-scrolling: touch;
+}
+
+.rne-page {
+  width: var(--rne-page-width);
+  max-width: 100%;
+  min-height: 60vh;
+  padding: var(--rne-page-padding);
+  background: var(--rne-page-background);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+.rne-canvas--plain {
+  padding: 0;
+}
+
+.rne-canvas--plain .rne-page {
+  box-shadow: none;
+  border-radius: 0;
+  padding: 16px;
+}
+
+/* ---- ProseMirror base (inlined so consumers import only this stylesheet) ---- */
+.rne-root .ProseMirror {
+  position: relative;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  -webkit-font-variant-ligatures: none;
+  font-variant-ligatures: none;
+  font-feature-settings: 'liga' 0;
+}
+
+.rne-root .ProseMirror pre {
+  white-space: pre-wrap;
+}
+
+.rne-root .ProseMirror li {
+  position: relative;
+}
+
+.rne-root .ProseMirror-hideselection *::selection {
+  background: transparent;
+}
+
+.rne-root .ProseMirror-hideselection {
+  caret-color: transparent;
+}
+
+.rne-root .ProseMirror [draggable][contenteditable='false'] {
+  user-select: text;
+}
+
+.rne-root .ProseMirror-selectednode {
+  outline: 2px solid var(--rne-accent);
+}
+
+.rne-root .ProseMirror li.ProseMirror-selectednode {
+  outline: none;
+}
+
+.rne-root .ProseMirror .tableWrapper {
+  overflow-x: auto;
+  margin: 0 0 0.8em;
+}
+
+/* ---- Editing surface (ProseMirror owns this DOM) ---- */
+.rne-root .ProseMirror {
+  outline: none;
+  font-family: var(--rne-font-family);
+  font-size: var(--rne-font-size);
+  line-height: 1.5;
+  color: var(--rne-text-color);
+}
+
+.rne-root .ProseMirror[contenteditable='false'] {
+  cursor: default;
+}
+
+.rne-root .ProseMirror ::selection {
+  background: var(--rne-selection-color);
+}
+
+.rne-root .ProseMirror p {
+  margin: 0 0 0.55em;
+}
+
+.rne-root .ProseMirror h1,
+.rne-root .ProseMirror h2,
+.rne-root .ProseMirror h3,
+.rne-root .ProseMirror h4,
+.rne-root .ProseMirror h5,
+.rne-root .ProseMirror h6 {
+  margin: 0.6em 0 0.35em;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.rne-root .ProseMirror h1 { font-size: 2em; }
+.rne-root .ProseMirror h2 { font-size: 1.6em; }
+.rne-root .ProseMirror h3 { font-size: 1.3em; }
+.rne-root .ProseMirror h4 { font-size: 1.15em; }
+.rne-root .ProseMirror h5 { font-size: 1em; }
+.rne-root .ProseMirror h6 { font-size: 0.9em; }
+
+.rne-root .ProseMirror a {
+  color: var(--rne-accent);
+  text-decoration: underline;
+}
+
+.rne-root .ProseMirror ul,
+.rne-root .ProseMirror ol {
+  margin: 0 0 0.55em;
+  padding-left: 1.7em;
+}
+
+.rne-root .ProseMirror blockquote.rne-blockquote {
+  margin: 0 0 0.6em;
+  padding-left: 1em;
+  border-left: 3px solid var(--rne-border-color);
+  color: #555;
+}
+
+.rne-root .ProseMirror hr.rne-hr {
+  border: none;
+  border-top: 1px solid var(--rne-border-color);
+  margin: 1em 0;
+}
+
+.rne-root .ProseMirror code.rne-inline-code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.92em;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.rne-root .ProseMirror img.rne-image {
+  max-width: 100%;
+  height: auto;
+  vertical-align: baseline;
+}
+
+.rne-root .ProseMirror img.ProseMirror-selectednode {
+  outline: 2px solid var(--rne-accent);
+}
+
+/* Page break */
+.rne-root .ProseMirror .rne-page-break {
+  height: 0;
+  margin: 1.2em 0;
+  border-top: 2px dashed var(--rne-accent);
+  position: relative;
+}
+
+.rne-root .ProseMirror .rne-page-break::after {
+  content: 'Page break';
+  position: absolute;
+  top: -0.75em;
+  right: 0;
+  font-size: 10px;
+  color: var(--rne-accent);
+  background: var(--rne-page-background);
+  padding: 0 4px;
+}
+
+/* Task lists */
+.rne-root .ProseMirror ul.rne-task-list {
+  list-style: none;
+  padding-left: 0.3em;
+}
+
+.rne-root .ProseMirror li.rne-task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.rne-root .ProseMirror .rne-task-checkbox {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 0.2em;
+  border: 1.5px solid #888;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.rne-root .ProseMirror li[data-checked='true'] > .rne-task-checkbox {
+  background: var(--rne-accent);
+  border-color: var(--rne-accent);
+  position: relative;
+}
+
+.rne-root .ProseMirror li[data-checked='true'] > .rne-task-checkbox::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.rne-root .ProseMirror li[data-checked='true'] > .rne-task-content {
+  text-decoration: line-through;
+  color: #888;
+}
+
+.rne-root .ProseMirror .rne-task-content {
+  flex: 1 1 auto;
+}
+
+/* Tables */
+.rne-root .ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0 0 0.8em;
+  overflow: hidden;
+}
+
+.rne-root .ProseMirror td,
+.rne-root .ProseMirror th {
+  border: 1px solid #b6b9c0;
+  padding: 5px 8px;
+  vertical-align: top;
+  position: relative;
+}
+
+.rne-root .ProseMirror th {
+  background: #f0f1f4;
+  font-weight: 700;
+  text-align: left;
+}
+
+.rne-root .ProseMirror .selectedCell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(64, 132, 255, 0.18);
+  pointer-events: none;
+}
+
+.rne-root .ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--rne-accent);
+  cursor: col-resize;
+}
+
+.rne-root .ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
+
+/* Placeholder */
+.rne-root .ProseMirror .rne-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: #9aa0a6;
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
+
+/* Gapcursor */
+.rne-root .ProseMirror-gapcursor {
+  display: none;
+  pointer-events: none;
+  position: absolute;
+}
+
+.rne-root .ProseMirror-gapcursor:after {
+  content: '';
+  display: block;
+  position: absolute;
+  top: -2px;
+  width: 20px;
+  border-top: 1px solid black;
+  animation: rne-blink 1.1s steps(2, start) infinite;
+}
+
+@keyframes rne-blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+/* Status bar */
+.rne-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 3px 10px;
+  font-size: 12px;
+  color: #5f6368;
+  background: var(--rne-toolbar-background);
+  border-top: 1px solid var(--rne-border-color);
+}
+
+.rne-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rne-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9aa0a6;
+}
+
+.rne-status-dot--savedLocal,
+.rne-status-dot--savingLocal { background: #f4b400; }
+.rne-status-dot--synced { background: #34a853; }
+.rne-status-dot--syncing { background: #4285f4; }
+.rne-status-dot--syncFailed { background: var(--rne-accent); }
+.rne-status-dot--offline { background: #9aa0a6; }
+
+/* Error fallback (error boundary) */
+.rne-error {
+  padding: 24px;
+  margin: 16px;
+  border: 1px solid var(--rne-accent);
+  border-radius: var(--rne-border-radius);
+  background: #fff5f3;
+  color: #7a1e10;
+}
+
+.rne-error button {
+  margin-top: 12px;
+  padding: 6px 14px;
+  border: 1px solid var(--rne-accent);
+  border-radius: var(--rne-border-radius);
+  background: var(--rne-accent);
+  color: #fff;
+  cursor: pointer;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .rne-canvas {
+    padding: 12px 8px;
+  }
+  .rne-page {
+    --rne-page-padding: 16px;
+    width: 100%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  .rne-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .rne-select {
+    max-width: 110px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rne-page {
+    --rne-page-padding: 12px;
+  }
+  .rne-btn {
+    min-width: 28px;
+    height: 28px;
+  }
+}
+
+/* ---- Print ---- */
+@media print {
+  .rne-toolbar,
+  .rne-statusbar {
+    display: none !important;
+  }
+  .rne-root,
+  .rne-canvas {
+    background: #fff;
+    overflow: visible;
+    padding: 0;
+    display: block;
+  }
+  .rne-page {
+    box-shadow: none;
+    width: auto;
+    border-radius: 0;
+  }
+  .rne-root .ProseMirror .rne-page-break {
+    border: none;
+    break-after: page;
+    page-break-after: always;
+  }
+  .rne-root .ProseMirror .rne-page-break::after {
+    display: none;
+  }
+}

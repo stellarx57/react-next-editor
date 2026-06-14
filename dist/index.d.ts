@@ -1,0 +1,197 @@
+import * as react from 'react';
+import { Component, ReactNode, ErrorInfo, JSX } from 'react';
+import { EditorState, Plugin, Command } from 'prosemirror-state';
+import { EditorView } from 'prosemirror-view';
+import { Schema } from 'prosemirror-model';
+import { D as DocumentJSON, S as SaveStatus, E as EditorMode, F as FeatureFlags, P as PageConfig, c as ToolbarConfig, T as ThemeTokens, a as EditorStrings } from './types-D1QUFKtw.js';
+export { b as PageSize, d as ToolbarItemId } from './types-D1QUFKtw.js';
+import { C as CommandSet, E as EditorCommand } from './sanitize-D9GKn_C2.js';
+export { D as DEFAULT_COLOR_PALETTE, b as DEFAULT_FEATURES, c as DEFAULT_FONT_FAMILIES, d as DEFAULT_FONT_SIZES, e as DEFAULT_PAGE, f as DEFAULT_STRINGS, g as DEFAULT_TOOLBAR_GROUPS, P as PAGE_DIMENSIONS_MM, m as buildPlugins, n as buildSchema, q as countDocument, r as createCommands, s as createDoc, t as createEditorState, w as defaultSchema, R as resolvePageDimensions, S as sanitizeHtml, V as sanitizeImageSrc, W as sanitizeUrl, _ as themeToCssVars } from './sanitize-D9GKn_C2.js';
+import { TextConversionOptions, DocxNodeConverter } from './export/index.js';
+export { DocxExportOptions, ExportFormat, PdfPrintOptions, buildPrintDocument, documentToDocxBlob, documentToDocxBuffer, documentToHtml, documentToText, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './export/index.js';
+import { LocalStoreAdapter } from './persistence/index.js';
+export { AssetUploadAdapter, ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, OutboxEntry, RemoteSaveResult, RemoteSyncAdapter, SaveStatusListener, StoredDocument, SyncEngine, requestPersistentStorage } from './persistence/index.js';
+import 'docx';
+
+/** Imperative handle exposed via `ref` (F-10.15, F-10.16). */
+interface EditorRef {
+    /** The current document as ProseMirror JSON (F-8.1). */
+    getJSON(): DocumentJSON;
+    /** The document as plain text (F-6.18). */
+    getText(options?: TextConversionOptions): string;
+    /** The document as an HTML fragment. */
+    getHTML(): string;
+    /** Replace the document content. */
+    setContent(content: DocumentJSON | string | null): void;
+    /** Focus the editing surface. */
+    focus(): void;
+    /** Whether the document has unsynced local changes. */
+    isDirty(): boolean;
+    /** Force an immediate local save (flush autosave). */
+    save(): Promise<void>;
+    /** Purge this document's locally-persisted data (F-12.7). */
+    clearLocalData(): Promise<void>;
+    /** Trigger an interactive export + download/print. */
+    exportAs(format: 'docx' | 'pdf' | 'txt' | 'html', filename?: string): Promise<void>;
+    /** Escape hatch: the underlying ProseMirror view (F-10.16). */
+    getView(): EditorView | null;
+    /** Escape hatch: the current editor state. */
+    getState(): EditorState | null;
+    /** The schema in use. */
+    getSchema(): Schema | null;
+}
+/** Lifecycle/state events (F-10.15). */
+interface EditorEvents {
+    /** Fired once the view is mounted and ready. */
+    onReady?: (ref: EditorRef) => void;
+    /** Fired on every document change with the new JSON. */
+    onChange?: (json: DocumentJSON, ref: EditorRef) => void;
+    /** Fired when the selection changes. */
+    onSelectionChange?: (state: EditorState) => void;
+    /** Fired when the local-save / sync status changes (F-9.4). */
+    onSaveStatusChange?: (status: SaveStatus, detail?: {
+        error?: string;
+    }) => void;
+    /** Fired when the editor or a feature throws; contained by the error boundary. */
+    onError?: (error: Error) => void;
+}
+/** Extension hooks (F-10.13, F-10.14). */
+interface EditorExtensions {
+    /** Extra ProseMirror plugins appended to the stack. */
+    plugins?: Plugin[];
+    /** Custom DOCX node converters keyed by node type (F-6.16). */
+    docxNodeConverters?: Record<string, DocxNodeConverter>;
+}
+/** Local persistence configuration (F-8.x, F-9.2). */
+interface PersistenceConfig {
+    /** Enable durable local autosave. Default true when a documentId is given. */
+    enabled?: boolean;
+    /** Injected store adapter; defaults to the built-in IndexedDB store. */
+    store?: LocalStoreAdapter;
+    /** Autosave debounce in ms (default 800). */
+    debounceMs?: number;
+    /** Request persistent storage on mount (F-9.11). Default true. */
+    requestPersistent?: boolean;
+}
+/**
+ * The single, documented configuration object for the editor (F-10.1). Every
+ * field is optional; sensible defaults apply (resolveConfig). Integration points
+ * are explicit props/callbacks — no host-app internals are referenced (F-10.11).
+ */
+interface EditorProps extends EditorEvents {
+    /** Stable id used for local persistence and sync. */
+    documentId?: string;
+    /** Initial content for uncontrolled usage. */
+    initialContent?: DocumentJSON | string | null;
+    /** Controlled value (with `onChange`) for controlled usage (F-10.20). */
+    value?: DocumentJSON | null;
+    /** Editing mode (F-10.3). `readOnly` is a convenience alias. */
+    mode?: EditorMode;
+    readOnly?: boolean;
+    /** Placeholder text for an empty document (F-4.7). */
+    placeholder?: string;
+    /** Per-feature toggles (F-10.2). */
+    features?: Partial<FeatureFlags>;
+    /** Page geometry (F-5.1, F-5.2). */
+    page?: Partial<PageConfig>;
+    /** Toolbar layout/customization (F-10.6), or false to hide. */
+    toolbar?: ToolbarConfig | false;
+    /** Show the word/character status bar. Default true. */
+    statusBar?: boolean;
+    /** Theme tokens (F-10.5). */
+    theme?: ThemeTokens;
+    /** Localized UI strings (F-10.8). */
+    strings?: Partial<EditorStrings>;
+    /** Font families offered in the font picker. */
+    fontFamilies?: string[];
+    /** Font sizes (pt) offered in the size picker. */
+    fontSizes?: number[];
+    /** Color palette for the color/highlight pickers. */
+    colorPalette?: string[];
+    /** Extension hooks (F-10.13). */
+    extensions?: EditorExtensions;
+    /** Local persistence configuration. */
+    persistence?: PersistenceConfig;
+    /** Per-document metadata stored alongside the content. */
+    metadata?: Record<string, unknown>;
+    /** Root element class and inline style (theming/layout). */
+    className?: string;
+    style?: React.CSSProperties;
+    /** Accessible label for the editing region (NF-4). */
+    ariaLabel?: string;
+}
+/** Value provided through {@link EditorContext} to toolbar and children. */
+interface EditorContextValue {
+    view: EditorView | null;
+    state: EditorState | null;
+    schema: Schema;
+    commands: CommandSet;
+    strings: EditorStrings;
+    features: FeatureFlags;
+    fontFamilies: string[];
+    fontSizes: number[];
+    colorPalette: string[];
+    editable: boolean;
+    /** Run a ProseMirror command against the live view and refocus. */
+    run: (command: Command) => boolean;
+}
+
+/**
+ * The embeddable rich document editor (F-10.17). Client-only — load via
+ * `next/dynamic(() => import('react-next-editor').then(m => m.Editor), { ssr: false })`.
+ * Wrapped in an error boundary so a failure never takes down the host (F-11.2).
+ */
+declare const Editor: react.ForwardRefExoticComponent<EditorProps & react.RefAttributes<EditorRef>>;
+
+interface ErrorBoundaryProps {
+    children: ReactNode;
+    onError?: (error: Error) => void;
+    fallbackMessage?: string;
+}
+interface ErrorBoundaryState {
+    error: Error | null;
+}
+/**
+ * Wraps the editor so a failure in one feature/instance cannot bring down the
+ * host app (F-11.2). Degrades to a recoverable state with a clear message and a
+ * retry button; reports the error via `onError` for monitoring (F-11.8).
+ */
+declare class EditorErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+    constructor(props: ErrorBoundaryProps);
+    static getDerivedStateFromError(error: Error): ErrorBoundaryState;
+    componentDidCatch(error: Error, info: ErrorInfo): void;
+    private readonly handleReset;
+    render(): ReactNode;
+}
+
+/** Context providing the live view/state/commands to the toolbar and children. */
+declare const EditorContext: react.Context<EditorContextValue | null>;
+/** Access the editor context; throws if used outside an <Editor>. */
+declare function useEditorContext(): EditorContextValue;
+
+interface ToolbarProps {
+    config?: ToolbarConfig;
+}
+/** Data-driven, keyboard-accessible toolbar (F-1–F-3, F-10.6, NF-4). */
+declare function Toolbar({ config }: ToolbarProps): react.JSX.Element;
+
+interface ToolbarButtonProps {
+    iconName: string;
+    label: string;
+    command: EditorCommand;
+}
+/** A single command button reflecting active/enabled state (F-10.6, NF-4). */
+declare function ToolbarButton({ iconName, label, command }: ToolbarButtonProps): react.JSX.Element;
+
+declare function ToolbarIcon({ name }: {
+    name: string;
+}): JSX.Element;
+
+interface StatusBarProps {
+    saveStatus: SaveStatus;
+    hasPersistence: boolean;
+}
+/** Word/character count (F-4.5) and visible save/sync status (F-9.4, NF-10). */
+declare function StatusBar({ saveStatus, hasPersistence }: StatusBarProps): react.JSX.Element;
+
+export { CommandSet, DocumentJSON, DocxNodeConverter, Editor, EditorCommand, EditorContext, type EditorContextValue, EditorErrorBoundary, type EditorEvents, type EditorExtensions, EditorMode, type EditorProps, type EditorRef, EditorStrings, FeatureFlags, LocalStoreAdapter, PageConfig, type PersistenceConfig, SaveStatus, StatusBar, TextConversionOptions, ThemeTokens, Toolbar, ToolbarButton, ToolbarConfig, ToolbarIcon, useEditorContext };
