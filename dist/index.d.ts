@@ -7,10 +7,11 @@ import { D as DocumentJSON, S as SaveStatus, E as EditorMode, F as FeatureFlags,
 export { b as PageSize, d as ToolbarItemId } from './types-D1QUFKtw.js';
 import { C as CommandSet, E as EditorCommand } from './sanitize-D9GKn_C2.js';
 export { D as DEFAULT_COLOR_PALETTE, b as DEFAULT_FEATURES, c as DEFAULT_FONT_FAMILIES, d as DEFAULT_FONT_SIZES, e as DEFAULT_PAGE, f as DEFAULT_STRINGS, g as DEFAULT_TOOLBAR_GROUPS, P as PAGE_DIMENSIONS_MM, m as buildPlugins, n as buildSchema, q as countDocument, r as createCommands, s as createDoc, t as createEditorState, w as defaultSchema, R as resolvePageDimensions, S as sanitizeHtml, V as sanitizeImageSrc, W as sanitizeUrl, _ as themeToCssVars } from './sanitize-D9GKn_C2.js';
-import { TextConversionOptions, DocxNodeConverter } from './export/index.js';
-export { DocxExportOptions, ExportFormat, PdfPrintOptions, buildPrintDocument, documentToDocxBlob, documentToDocxBuffer, documentToHtml, documentToText, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './export/index.js';
+import { T as TextConversionOptions, b as DocxNodeConverter } from './docx-BG7h8-Nd.js';
+export { a as DocxExportOptions, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from './docx-BG7h8-Nd.js';
 import { LocalStoreAdapter } from './persistence/index.js';
 export { AssetUploadAdapter, ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, OutboxEntry, RemoteSaveResult, RemoteSyncAdapter, SaveStatusListener, StoredDocument, SyncEngine, requestPersistentStorage } from './persistence/index.js';
+export { ExportFormat, PdfPrintOptions, buildPrintDocument, documentToHtml, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './export/index.js';
 import 'docx';
 
 /** Imperative handle exposed via `ref` (F-10.15, F-10.16). */

@@ -1,25 +1,7 @@
+import { T as TextConversionOptions } from '../docx-BG7h8-Nd.js';
+export { D as DocxContext, a as DocxExportOptions, b as DocxNodeConverter, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from '../docx-BG7h8-Nd.js';
 import { D as DocumentJSON, P as PageConfig } from '../types-D1QUFKtw.js';
-import * as DocxNamespace from 'docx';
-
-/**
- * Options governing plain-text conversion (F-6.20). Defaults follow the
- * documented structure rules: blocks separated by blank lines, list items on
- * their own lines, table cells tab-delimited, images replaced by alt text,
- * links rendered as their text.
- */
-interface TextConversionOptions {
-    /** Append the URL after link text as " (url)". Default false. */
-    includeLinkUrls?: boolean;
-    /** Replacement for images: 'alt' uses alt text, 'omit' drops them. Default 'alt'. */
-    images?: 'alt' | 'omit';
-    /** Newline sequence. Default '\n'. */
-    newline?: string;
-}
-/**
- * Convert a ProseMirror document (JSON) to plain text (F-6.18). Pure and
- * isomorphic: identical output in the browser and on the server (F-6.19).
- */
-declare function documentToText(doc: DocumentJSON, options?: TextConversionOptions): string;
+import 'docx';
 
 /** Serialize a document (JSON) to an HTML fragment (the document body content). */
 declare function documentToHtml(doc: DocumentJSON): string;
@@ -31,31 +13,6 @@ declare function printStylesheet(page: PageConfig): string;
  * consistent (F-6.4, F-6.11).
  */
 declare function buildPrintDocument(doc: DocumentJSON, page: PageConfig, title?: string): string;
-
-/**
- * Isomorphic DOCX serializer (§8.3). Walks the document JSON and emits OOXML via
- * the `docx` library, which runs in both the browser (Blob) and Node
- * (Buffer/Stream). A per-node mapping is used so custom nodes can register their
- * own conversion (F-6.16, F-10.14). The `docx` module is imported lazily so it
- * stays out of the initial bundle (NF-2) and remains optional.
- */
-/** A converter for a custom node type, returning docx block elements. */
-type DocxNodeConverter = (node: DocumentJSON, ctx: DocxContext) => unknown[];
-interface DocxExportOptions {
-    page?: PageConfig;
-    title?: string;
-    /** Custom node converters keyed by node type name (extension mapping). */
-    nodeConverters?: Record<string, DocxNodeConverter>;
-}
-interface DocxContext {
-    serializeBlocks: (nodes: DocumentJSON[]) => unknown[];
-    docx: DocxModule;
-}
-type DocxModule = typeof DocxNamespace;
-/** Serialize a document to a DOCX Blob for client-side download (F-6.1, F-6.6). */
-declare function documentToDocxBlob(doc: DocumentJSON, options?: DocxExportOptions): Promise<Blob>;
-/** Serialize a document to a DOCX Buffer for server-side storage (F-6.10). */
-declare function documentToDocxBuffer(doc: DocumentJSON, options?: DocxExportOptions): Promise<Buffer>;
 
 interface PdfPrintOptions {
     page?: PageConfig;
@@ -100,4 +57,4 @@ declare function exportDocument(doc: DocumentJSON, format: ExportFormat, options
     text?: TextConversionOptions;
 }): Promise<void>;
 
-export { type DocxContext, type DocxExportOptions, type DocxNodeConverter, type ExportFormat, type PdfPrintOptions, type TextConversionOptions, buildPrintDocument, documentToDocxBlob, documentToDocxBuffer, documentToHtml, documentToText, downloadBlob, downloadText, exportDocument, printDocumentToPdf, printStylesheet };
+export { type ExportFormat, type PdfPrintOptions, TextConversionOptions, buildPrintDocument, documentToHtml, downloadBlob, downloadText, exportDocument, printDocumentToPdf, printStylesheet };

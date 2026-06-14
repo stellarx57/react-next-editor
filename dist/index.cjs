@@ -1,8 +1,9 @@
 'use strict';
 
 var chunk4EBPHMCI_cjs = require('./chunk-4EBPHMCI.cjs');
-var chunkP73CSV6Q_cjs = require('./chunk-P73CSV6Q.cjs');
+var chunkZ5BK2HKE_cjs = require('./chunk-Z5BK2HKE.cjs');
 var chunkZHYBQNX4_cjs = require('./chunk-ZHYBQNX4.cjs');
+var chunk6GVC7VPR_cjs = require('./chunk-6GVC7VPR.cjs');
 var chunkF6LJJXBU_cjs = require('./chunk-F6LJJXBU.cjs');
 var chunkBFSJWBBZ_cjs = require('./chunk-BFSJWBBZ.cjs');
 var chunkAT25KOMU_cjs = require('./chunk-AT25KOMU.cjs');
@@ -473,7 +474,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const handle = react.useMemo(
     () => ({
       getJSON,
-      getText: (options) => chunkP73CSV6Q_cjs.documentToText(getJSON(), options),
+      getText: (options) => chunk6GVC7VPR_cjs.documentToText(getJSON(), options),
       getHTML: () => chunkF6LJJXBU_cjs.documentToHtml(getJSON()),
       setContent,
       focus: () => viewRef.current?.focus(),
@@ -484,7 +485,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       clearLocalData: async () => {
         await persistenceRef.current?.clearLocal();
       },
-      exportAs: (format, filename) => chunkP73CSV6Q_cjs.exportDocument(getJSON(), format, {
+      exportAs: (format, filename) => chunkZ5BK2HKE_cjs.exportDocument(getJSON(), format, {
         filename: filename ?? propsRef.current.documentId,
         page: cfgRef.current.page,
         title: filename ?? propsRef.current.documentId
@@ -679,33 +680,21 @@ Object.defineProperty(exports, "defaultSchema", {
   enumerable: true,
   get: function () { return chunk4EBPHMCI_cjs.defaultSchema; }
 });
-Object.defineProperty(exports, "documentToDocxBlob", {
-  enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.documentToDocxBlob; }
-});
-Object.defineProperty(exports, "documentToDocxBuffer", {
-  enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.documentToDocxBuffer; }
-});
-Object.defineProperty(exports, "documentToText", {
-  enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.documentToText; }
-});
 Object.defineProperty(exports, "downloadBlob", {
   enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.downloadBlob; }
+  get: function () { return chunkZ5BK2HKE_cjs.downloadBlob; }
 });
 Object.defineProperty(exports, "downloadText", {
   enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.downloadText; }
+  get: function () { return chunkZ5BK2HKE_cjs.downloadText; }
 });
 Object.defineProperty(exports, "exportDocument", {
   enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.exportDocument; }
+  get: function () { return chunkZ5BK2HKE_cjs.exportDocument; }
 });
 Object.defineProperty(exports, "printDocumentToPdf", {
   enumerable: true,
-  get: function () { return chunkP73CSV6Q_cjs.printDocumentToPdf; }
+  get: function () { return chunkZ5BK2HKE_cjs.printDocumentToPdf; }
 });
 Object.defineProperty(exports, "ConflictError", {
   enumerable: true,
@@ -734,6 +723,18 @@ Object.defineProperty(exports, "SyncEngine", {
 Object.defineProperty(exports, "requestPersistentStorage", {
   enumerable: true,
   get: function () { return chunkZHYBQNX4_cjs.requestPersistentStorage; }
+});
+Object.defineProperty(exports, "documentToDocxBlob", {
+  enumerable: true,
+  get: function () { return chunk6GVC7VPR_cjs.documentToDocxBlob; }
+});
+Object.defineProperty(exports, "documentToDocxBuffer", {
+  enumerable: true,
+  get: function () { return chunk6GVC7VPR_cjs.documentToDocxBuffer; }
+});
+Object.defineProperty(exports, "documentToText", {
+  enumerable: true,
+  get: function () { return chunk6GVC7VPR_cjs.documentToText; }
 });
 Object.defineProperty(exports, "buildPrintDocument", {
   enumerable: true,

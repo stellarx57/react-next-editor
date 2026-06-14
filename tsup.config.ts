@@ -6,6 +6,7 @@ export default defineConfig({
     'core/index': 'src/core/index.ts',
     'export/index': 'src/export/index.ts',
     'persistence/index': 'src/persistence/index.ts',
+    'server/index': 'src/server/index.ts',
   },
   format: ['esm', 'cjs'],
   outExtension({ format }) {
@@ -19,7 +20,9 @@ export default defineConfig({
   minify: false,
   // React is a peer dependency; `docx` is optional and lazily imported. Keep external
   // so consumers' single React instance is used and the export libs stay code-split.
-  external: ['react', 'react-dom', 'react/jsx-runtime', 'docx'],
+  // The server PDF renderers lazily import these only if the consumer installs
+  // them; keep them external so the build never requires them.
+  external: ['react', 'react-dom', 'react/jsx-runtime', 'docx', 'playwright', 'puppeteer'],
   async onSuccess() {
     // Emit the stylesheet at a stable, documented path: dist/styles.css
     const { copyFile } = await import('node:fs/promises');

@@ -1,9 +1,11 @@
 import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-NR6UA3IR.js';
 export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-NR6UA3IR.js';
-import { exportDocument, documentToText } from './chunk-X46VSY5L.js';
-export { documentToDocxBlob, documentToDocxBuffer, documentToText, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-X46VSY5L.js';
+import { exportDocument } from './chunk-HRVQGBSO.js';
+export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-HRVQGBSO.js';
 import { IndexedDBStore, DocumentPersistence, requestPersistentStorage } from './chunk-WSWRQZS3.js';
 export { ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, SyncEngine, requestPersistentStorage } from './chunk-WSWRQZS3.js';
+import { documentToText } from './chunk-7ATKBEH3.js';
+export { documentToDocxBlob, documentToDocxBuffer, documentToText } from './chunk-7ATKBEH3.js';
 import { documentToHtml } from './chunk-PDBEZLLY.js';
 export { buildPrintDocument, documentToHtml } from './chunk-PDBEZLLY.js';
 import { preloadSanitizer } from './chunk-MWO7FWCI.js';

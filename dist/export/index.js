@@ -1,4 +1,5 @@
-export { documentToDocxBlob, documentToDocxBuffer, documentToText, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from '../chunk-X46VSY5L.js';
+export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from '../chunk-HRVQGBSO.js';
+export { documentToDocxBlob, documentToDocxBuffer, documentToText } from '../chunk-7ATKBEH3.js';
 export { buildPrintDocument, documentToHtml, printStylesheet } from '../chunk-PDBEZLLY.js';
 import '../chunk-MWO7FWCI.js';
 import '../chunk-LBY6ULPF.js';

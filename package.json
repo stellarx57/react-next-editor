@@ -36,6 +36,11 @@
       "import": "./dist/persistence/index.js",
       "require": "./dist/persistence/index.cjs"
     },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js",
+      "require": "./dist/server/index.cjs"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
