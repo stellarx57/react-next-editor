@@ -159,6 +159,13 @@ const ALLOWED_HTML_ATTRS = [
   'data-checked',
 ];
 
+/** Minimal structural type for the DOMPurify instance we use (avoids hard dep on its types). */
+interface DOMPurifyInstance {
+  sanitize(dirty: string, config?: Record<string, unknown>): string;
+  addHook(entryPoint: string, hook: (node: unknown) => void): void;
+}
+type DOMPurifyFactory = (window: Window & typeof globalThis) => DOMPurifyInstance;
+
 let purifierPromise: Promise<((html: string) => string) | null> | null = null;
 /** Resolved synchronous purify function, cached after the first async load. */
 let cachedPurify: ((html: string) => string) | null = null;
@@ -174,8 +181,8 @@ async function getPurifier(): Promise<((html: string) => string) | null> {
   purifierPromise = (async () => {
     if (typeof window === 'undefined') return null;
     const mod = await import('dompurify');
-    const DOMPurify = (mod.default ?? mod) as typeof import('dompurify').default;
-    const purify = DOMPurify(window as unknown as Window & typeof globalThis);
+    const factory = (mod.default ?? mod) as unknown as DOMPurifyFactory;
+    const purify = factory(window as unknown as Window & typeof globalThis);
     // Force-strip event handlers and dangerous protocols defensively.
     purify.addHook('afterSanitizeAttributes', (node) => {
       const el = node as Element;
