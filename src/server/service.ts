@@ -32,6 +32,13 @@ export class ExportService {
 
   constructor(options: ExportServiceOptions = {}) {
     this.options = options;
+    if (!options.authorize) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        'react-next-editor: ExportService created without an `authorize` hook — ' +
+          'all requests are allowed. Provide `authorize` to enforce access control (F-6.15).',
+      );
+    }
   }
 
   /** Render a single export request (synchronous result). */

@@ -46,14 +46,24 @@ export class FilesystemStorage implements StorageAdapter {
   }
 
   async write(key: string, data: Uint8Array, _contentType: string) {
-    const { join, dirname } = await import('node:path');
+    const { dirname, resolve, relative, isAbsolute, sep } = await import('node:path');
     const { mkdir, writeFile } = await import('node:fs/promises');
-    // Prevent path traversal in the key.
-    const safeKey = key.replace(/\.\.(?:[/\\]|$)/g, '').replace(/^[/\\]+/, '');
-    const filePath = join(this.baseDir, safeKey);
+
+    // Resolve the target and assert it stays inside baseDir — robust against
+    // traversal sequences (`../`, `....//`, absolute keys, symlinked separators).
+    const root = resolve(this.baseDir);
+    const cleanedKey = key.replace(/^[/\\]+/, '');
+    const filePath = resolve(root, cleanedKey);
+    const rel = relative(root, filePath);
+    if (rel === '' || rel.startsWith('..') || isAbsolute(rel)) {
+      throw new Error(`react-next-editor: unsafe storage key rejected: ${key}`);
+    }
+
     await mkdir(dirname(filePath), { recursive: true });
     await writeFile(filePath, data);
-    const url = this.baseUrl ? `${this.baseUrl.replace(/\/$/, '')}/${safeKey}` : filePath;
+    // The public URL uses the path relative to the storage root.
+    const urlKey = rel.split(sep).join('/');
+    const url = this.baseUrl ? `${this.baseUrl.replace(/\/$/, '')}/${urlKey}` : filePath;
     return { url, ref: filePath };
   }
 }

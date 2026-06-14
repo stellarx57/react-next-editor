@@ -11,6 +11,11 @@ const SAFE_LINK_SCHEMES = new Set(['http:', 'https:', 'mailto:', 'tel:', 'ftp:']
 /** URL schemes permitted for images. `data:` is allowed only for image MIME types. */
 const SAFE_IMAGE_SCHEMES = new Set(['http:', 'https:', 'blob:']);
 
+/** Maximum length of an inline `data:` image URI (characters). */
+const MAX_DATA_URI_LENGTH = 3_500_000;
+/** Maximum length of a hyperlink URL (characters). */
+const MAX_URL_LENGTH = 16_384;
+
 const DANGEROUS_SCHEME = /^(javascript|vbscript|data|file):/i;
 
 /**
@@ -36,6 +41,7 @@ function stripControlChars(value: string): string {
  */
 export function sanitizeUrl(raw: string | null | undefined): string | null {
   if (!raw) return null;
+  if (raw.length > MAX_URL_LENGTH) return null;
   const value = raw.trim();
   if (!value) return null;
 
@@ -73,12 +79,17 @@ export function sanitizeUrl(raw: string | null | undefined): string | null {
  */
 export function sanitizeImageSrc(raw: string | null | undefined): string | null {
   if (!raw) return null;
+  // Reject oversized input up front (before the O(n) control-char scan).
+  if (raw.length > MAX_DATA_URI_LENGTH) return null;
   const value = raw.trim();
   if (!value) return null;
   const cleaned = stripControlChars(value);
   if (!cleaned) return null;
 
   if (/^data:/i.test(cleaned)) {
+    // Bound the size of inline data URIs to avoid memory/DoS from oversized
+    // payloads embedded in a document (~3.4 MB of base64 ≈ 2.5 MB binary).
+    if (cleaned.length > MAX_DATA_URI_LENGTH) return null;
     // Permit only raster image data URIs; reject SVG (can carry script).
     if (/^data:image\/(png|jpe?g|gif|webp|bmp|x-icon|vnd\.microsoft\.icon);/i.test(cleaned)) {
       return cleaned;
@@ -203,12 +214,14 @@ async function getPurifier(): Promise<((html: string) => string) | null> {
     });
     const fn = (html: string) =>
       purify.sanitize(html, {
+        // An explicit allow-list (do not combine with USE_PROFILES, which would
+        // widen the tag set and conflict with ALLOWED_TAGS).
         ALLOWED_TAGS: ALLOWED_HTML_TAGS,
         ALLOWED_ATTR: ALLOWED_HTML_ATTRS,
         FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form', 'svg', 'math'],
         FORBID_ATTR: ['srcset'],
         ALLOW_DATA_ATTR: false,
-        USE_PROFILES: { html: true },
+        ALLOW_UNKNOWN_PROTOCOLS: false,
       });
     cachedPurify = fn;
     return fn;
@@ -225,22 +238,39 @@ export async function preloadSanitizer(): Promise<void> {
 }
 
 /**
+ * Last-resort, regex-based HTML scrub used when DOMPurify is not (yet) available
+ * (e.g. the first paste before the async load completes, or a non-DOM runtime).
+ * It removes script/style/active-content blocks, inline event handlers, and
+ * dangerous URL schemes. This is defense-in-depth only: ProseMirror parses paste
+ * input in an inert document and the schema whitelists nodes, so content never
+ * executes regardless.
+ */
+export function basicScrubHtml(html: string): string {
+  return html
+    .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[^>]*>/gi, '')
+    .replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '')
+    .replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '')
+    .replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '')
+    .replace(/(href|src)\s*=\s*"\s*(?:javascript|vbscript|data:text\/html)[^"]*"/gi, '$1="#"')
+    .replace(/(href|src)\s*=\s*'\s*(?:javascript|vbscript|data:text\/html)[^']*'/gi, "$1='#'");
+}
+
+/**
  * Sanitize an HTML string synchronously, best-effort: uses the cached DOM
- * sanitizer if it has been loaded, otherwise returns the input unchanged for
- * ProseMirror's own parser (which never executes content and is constrained by
- * the schema and per-attribute URL sanitization). Use for the paste transform.
+ * sanitizer if it has been loaded, otherwise applies {@link basicScrubHtml} as a
+ * fallback. Use for the paste transform (which must be synchronous).
  */
 export function sanitizeHtmlSync(html: string): string {
-  return cachedPurify ? cachedPurify(html) : html;
+  return cachedPurify ? cachedPurify(html) : basicScrubHtml(html);
 }
 
 /**
  * Sanitize an HTML string for safe parsing into the editor. No script, inline
  * event handlers, or active content survives (F-12.1, F-12.2). When no DOM
- * sanitizer is available the input is returned unchanged for ProseMirror's own
- * parser, which never executes content.
+ * sanitizer is available a regex scrub is applied as a fallback.
  */
 export async function sanitizeHtml(html: string): Promise<string> {
   const purify = await getPurifier();
-  return purify ? purify(html) : html;
+  return purify ? purify(html) : basicScrubHtml(html);
 }

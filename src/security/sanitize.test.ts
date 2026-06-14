@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sanitizeImageSrc, sanitizeUrl } from './sanitize';
+import { basicScrubHtml, sanitizeImageSrc, sanitizeUrl } from './sanitize';
 
 describe('sanitizeUrl', () => {
   it('accepts safe schemes and relative URLs', () => {
@@ -49,5 +49,28 @@ describe('sanitizeImageSrc', () => {
     expect(sanitizeImageSrc('data:text/html;base64,PHNjcmlwdD4=')).toBeNull();
     // eslint-disable-next-line no-script-url
     expect(sanitizeImageSrc('javascript:alert(1)')).toBeNull();
+  });
+
+  it('rejects oversized data URIs (DoS guard)', () => {
+    const huge = `data:image/png;base64,${'A'.repeat(4_000_000)}`;
+    expect(sanitizeImageSrc(huge)).toBeNull();
+    const ok = `data:image/png;base64,${'A'.repeat(100)}`;
+    expect(sanitizeImageSrc(ok)).toBe(ok);
+  });
+});
+
+describe('basicScrubHtml (sync paste fallback)', () => {
+  it('removes scripts, styles, event handlers and dangerous URLs', () => {
+    const dirty =
+      '<p onclick="evil()">hi</p><script>steal()</script>' +
+      '<style>body{x:1}</style><a href="javascript:alert(1)">x</a>' +
+      '<img src="data:text/html;base64,abc">';
+    const clean = basicScrubHtml(dirty);
+    expect(clean).not.toContain('<script');
+    expect(clean).not.toContain('<style');
+    expect(clean).not.toContain('onclick');
+    // eslint-disable-next-line no-script-url
+    expect(clean).not.toContain('javascript:');
+    expect(clean).toContain('hi');
   });
 });
