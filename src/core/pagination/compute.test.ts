@@ -67,9 +67,9 @@ describe('computePagination', () => {
     expect(result.pageContentTops).toEqual([0, 1200, 2400]);
   });
 
-  it('does not split a block taller than a page; it overflows in place', () => {
-    // Block 0 is 1500px (taller than 1000px page). It starts at page top, so no
-    // break before it; block 1 follows.
+  it('overflows a block in place only when it has no line metrics to split on', () => {
+    // Block 0 is 1500px (taller than 1000px page) and is NOT splittable (no
+    // lines). It starts at page top, so no break before it; block 1 follows.
     const blocks: BlockMetric[] = [
       { pos: 1, top: 0, height: 1500 },
       { pos: 11, top: 1500, height: 100 },
@@ -81,6 +81,63 @@ describe('computePagination', () => {
     expect(result.breaks[0]!.pos).toBe(11);
     // usedHeight = 1500 (> contentHeight) → spacer = max(0, 1000-1500)+200 = 200.
     expect(result.breaks[0]!.spacerHeight).toBe(200);
+    expect(result.breaks[0]!.inline).toBe(false);
+  });
+
+  it('splits a tall text block at a line boundary (line-level splitting)', () => {
+    // One block, 15 lines × 100px (1500px) taller than a 1000px page.
+    const lines = Array.from({ length: 15 }, (_, i) => ({
+      pos: 100 + i,
+      top: i * 100,
+      height: 100,
+    }));
+    const block: BlockMetric = { pos: 1, top: 0, height: 1500, lines };
+    const result = computePagination([block], geo);
+
+    expect(result.pageCount).toBe(2);
+    expect(result.breaks).toHaveLength(1);
+    const br = result.breaks[0]!;
+    // Lines 0..9 fill 0..1000; line 10 (top 1000) overflows → break before it.
+    expect(br.pos).toBe(110);
+    expect(br.inline).toBe(true); // mid-block break
+    expect(br.spacerHeight).toBe(200); // (1000-1000) + 200
+    expect(result.pageContentTops).toEqual([0, 1200]);
+  });
+
+  it('splits a very tall block across three pages', () => {
+    // 25 lines × 100px = 2500px → spans 3 pages (1000px each).
+    const lines = Array.from({ length: 25 }, (_, i) => ({
+      pos: 100 + i,
+      top: i * 100,
+      height: 100,
+    }));
+    const result = computePagination([{ pos: 1, top: 0, height: 2500, lines }], geo);
+    expect(result.pageCount).toBe(3);
+    expect(result.breaks).toHaveLength(2);
+    expect(result.breaks.every((b) => b.inline)).toBe(true);
+    expect(result.pageContentTops).toEqual([0, 1200, 2400]);
+  });
+
+  it('breaks before the first line of a block (block boundary) when it does not fit', () => {
+    // Block A fills 0..950; block B (lined) starts at 950 — its first line
+    // already overflows, so the whole block moves (inline=false).
+    const blockA: BlockMetric = { pos: 1, top: 0, height: 950 };
+    const blockB: BlockMetric = {
+      pos: 11,
+      top: 950,
+      height: 500,
+      lines: [
+        { pos: 11, top: 950, height: 100 },
+        { pos: 21, top: 1050, height: 100 },
+        { pos: 31, top: 1150, height: 100 },
+        { pos: 41, top: 1250, height: 100 },
+        { pos: 51, top: 1350, height: 100 },
+      ],
+    };
+    const result = computePagination([blockA, blockB], geo);
+    expect(result.pageCount).toBe(2);
+    expect(result.breaks[0]!.pos).toBe(11);
+    expect(result.breaks[0]!.inline).toBe(false);
   });
 
   it('ignores non-finite metrics defensively', () => {

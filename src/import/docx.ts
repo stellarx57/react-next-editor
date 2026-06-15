@@ -38,7 +38,11 @@ type MammothInput = { arrayBuffer: ArrayBuffer } | { buffer: Uint8Array };
 interface MammothModule {
   convertToHtml(
     input: MammothInput,
-    options?: { styleMap?: string[]; includeDefaultStyleMap?: boolean },
+    options?: {
+      styleMap?: string[];
+      includeDefaultStyleMap?: boolean;
+      ignoreEmptyParagraphs?: boolean;
+    },
   ): Promise<{ value: string; messages: Array<{ type: string; message: string }> }>;
 }
 
@@ -62,12 +66,24 @@ async function loadMammoth(): Promise<MammothModule> {
   return mammothPromise;
 }
 
-/** Default style mappings improving fidelity for common Word styles. */
+/**
+ * Default style mappings improving fidelity for common Word styles. Mammoth's
+ * built-in map already covers Heading 1–6, bold/italic, lists, tables, links and
+ * images; these extend it to titles, quotes, captions and higher heading levels
+ * so more structure survives import.
+ */
 const DEFAULT_STYLE_MAP = [
   "p[style-name='Title'] => h1:fresh",
   "p[style-name='Subtitle'] => h2:fresh",
+  "p[style-name='Heading 7'] => h6:fresh",
+  "p[style-name='Heading 8'] => h6:fresh",
+  "p[style-name='Heading 9'] => h6:fresh",
   "p[style-name='Quote'] => blockquote:fresh",
   "p[style-name='Intense Quote'] => blockquote:fresh",
+  "p[style-name='Caption'] => p.rne-caption:fresh > em",
+  "r[style-name='Strong'] => strong",
+  "r[style-name='Emphasis'] => em",
+  "r[style-name='Book Title'] => em",
 ];
 
 /**
@@ -116,6 +132,8 @@ export async function importDocx(
   const { value: rawHtml, messages } = await mammoth.convertToHtml(mammothInput, {
     styleMap: [...DEFAULT_STYLE_MAP, ...(options.styleMap ?? [])],
     includeDefaultStyleMap: true,
+    // Preserve blank paragraphs so Word's spacing-by-empty-paragraph survives.
+    ignoreEmptyParagraphs: false,
   });
 
   const html = await sanitizeHtml(rawHtml);

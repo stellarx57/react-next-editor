@@ -266,11 +266,21 @@
   padding-bottom: 0;
 }
 
-/* Transparent spacers create the visual gap between pages (sheets show through). */
+/* Transparent spacers create the visual gap between pages (sheets show through).
+   Rendered as a block-level element so they break the inline flow cleanly at a
+   block boundary or inside a paragraph (line-level split). */
 .rne-page-spacer {
+  display: block;
   width: 100%;
   user-select: none;
   pointer-events: none;
+}
+
+/* Spacer that splits a paragraph mid-block: must not be selectable or carry a
+   caret, and must collapse to nothing horizontally. */
+.rne-page-spacer--inline {
+  margin: 0;
+  padding: 0;
 }
 
 /* ---- ProseMirror base (inlined so consumers import only this stylesheet) ---- */

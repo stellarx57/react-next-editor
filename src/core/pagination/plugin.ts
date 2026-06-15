@@ -3,10 +3,20 @@ import { Plugin, PluginKey, type EditorState } from 'prosemirror-state';
 import { Decoration, DecorationSet, type EditorView } from 'prosemirror-view';
 import {
   type BlockMetric,
+  type LineMetric,
   type PaginationResult,
   computePagination,
   paginationEquals,
 } from './compute';
+
+/**
+ * Only blocks at least this fraction of a page tall are line-measured; shorter
+ * blocks that straddle a boundary are moved whole (a small, acceptable gap),
+ * which bounds the cost of line measurement to a few large blocks.
+ */
+const LINE_SPLIT_MIN_RATIO = 0.25;
+/** Safety bound on lines measured per block. */
+const MAX_LINES_PER_BLOCK = 4000;
 
 /**
  * Visual pagination plugin (F-5.3–F-5.5). Measures the document's top-level
@@ -71,14 +81,23 @@ function buildDecorations(doc: PMNode, result: PaginationResult | null) {
     Decoration.widget(
       br.pos,
       () => {
-        const el = document.createElement('div');
-        el.className = 'rne-page-spacer';
+        // A block-display span breaks the inline flow cleanly whether the spacer
+        // sits at a block boundary or inside a paragraph (line-level split).
+        const el = document.createElement('span');
+        el.className = `rne-page-spacer${br.inline ? ' rne-page-spacer--inline' : ''}`;
+        el.style.display = 'block';
+        el.style.width = '100%';
         el.style.height = `${Math.max(0, br.spacerHeight)}px`;
         el.setAttribute('contenteditable', 'false');
         el.setAttribute('aria-hidden', 'true');
         return el;
       },
-      { side: -1, key: `rne-pb:${br.pos}:${Math.round(br.spacerHeight)}`, ignoreSelection: true },
+      {
+        side: -1,
+        key: `rne-pb:${br.pos}:${Math.round(br.spacerHeight)}`,
+        ignoreSelection: true,
+        marks: [],
+      },
     ),
   );
   return DecorationSet.create(doc, decorations);
@@ -200,12 +219,15 @@ class PaginationView {
     const contentRect = view.dom.getBoundingClientRect();
     const paddingTop = geo.marginTopPx;
     const currentBreaks = current?.breaks ?? [];
+    const lineSplitThreshold = geo.contentHeightPx * LINE_SPLIT_MIN_RATIO;
 
     const offsets: number[] = [];
     const naturalTops: number[] = [];
     const rectHeights: number[] = [];
+    const elements: HTMLElement[] = [];
+    const splittable: boolean[] = [];
 
-    view.state.doc.forEach((_node, offset) => {
+    view.state.doc.forEach((node, offset) => {
       let dom: Node | null = null;
       try {
         dom = view.nodeDOM(offset);
@@ -220,6 +242,9 @@ class PaginationView {
       offsets.push(offset);
       naturalTops.push(renderedTop - spacerBefore - paddingTop);
       rectHeights.push(rect.height);
+      elements.push(dom);
+      // Tables and leaf atoms (images, rules) cannot be line-split safely.
+      splittable.push(!node.isAtom && node.type.name !== 'table');
     });
 
     const blocks: BlockMetric[] = [];
@@ -230,9 +255,78 @@ class PaginationView {
         i < offsets.length - 1
           ? Math.max(rectHeights[i]!, naturalTops[i + 1]! - naturalTops[i]!)
           : rectHeights[i]!;
-      blocks.push({ pos: offsets[i]!, top: naturalTops[i]!, height });
+
+      let lines: LineMetric[] | undefined;
+      if (splittable[i] && rectHeights[i]! > lineSplitThreshold) {
+        lines = this.measureLines(elements[i]!, offsets[i]!, contentRect, paddingTop, currentBreaks);
+      }
+
+      blocks.push({ pos: offsets[i]!, top: naturalTops[i]!, height, lines });
     }
     return blocks;
+  }
+
+  /**
+   * Measure the line boxes of a tall, splittable block in spacer-independent
+   * natural coordinates so the block can break across pages at line boundaries.
+   * Returns `undefined` (block moves whole) if measurement is unavailable or a
+   * line position cannot be resolved — never throws.
+   */
+  private measureLines(
+    dom: HTMLElement,
+    blockOffset: number,
+    contentRect: DOMRect,
+    paddingTop: number,
+    currentBreaks: PaginationResult['breaks'],
+  ): LineMetric[] | undefined {
+    try {
+      if (typeof document === 'undefined' || typeof document.createRange !== 'function') {
+        return undefined;
+      }
+      const range = document.createRange();
+      range.selectNodeContents(dom);
+      const rects = range.getClientRects();
+      if (!rects || rects.length === 0) return undefined;
+
+      // Merge fragment rects that share a baseline into single visual lines.
+      const rawLines: Array<{ top: number; bottom: number; left: number }> = [];
+      for (let i = 0; i < rects.length && rawLines.length < MAX_LINES_PER_BLOCK; i++) {
+        const r = rects[i]!;
+        if (r.width <= 0 || r.height <= 0) continue;
+        const last = rawLines[rawLines.length - 1];
+        if (last && Math.abs(last.top - r.top) < 3) {
+          last.bottom = Math.max(last.bottom, r.bottom);
+          last.left = Math.min(last.left, r.left);
+        } else {
+          rawLines.push({ top: r.top, bottom: r.bottom, left: r.left });
+        }
+      }
+      if (rawLines.length < 2) return undefined;
+
+      const spacerBeforePos = (pos: number) => {
+        let total = 0;
+        for (const br of currentBreaks) if (br.pos <= pos) total += br.spacerHeight;
+        return total;
+      };
+
+      const lines: LineMetric[] = [];
+      for (let i = 0; i < rawLines.length; i++) {
+        const rl = rawLines[i]!;
+        let pos: number;
+        if (i === 0) {
+          pos = blockOffset;
+        } else {
+          const at = this.view.posAtCoords({ left: rl.left + 1, top: (rl.top + rl.bottom) / 2 });
+          if (!at) continue; // unresolvable line → not a break candidate
+          pos = at.pos;
+        }
+        const naturalTop = rl.top - contentRect.top - spacerBeforePos(pos) - paddingTop;
+        lines.push({ pos, top: naturalTop, height: rl.bottom - rl.top });
+      }
+      return lines.length >= 2 ? lines : undefined;
+    } catch {
+      return undefined;
+    }
   }
 
   private renderBackground(bg: HTMLElement, geo: PaginationGeometry, result: PaginationResult) {

@@ -82,8 +82,9 @@ const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), 
   Node**: DOCX (via `docx`), PDF (browser print or a headless-browser renderer),
   plain text, and HTML. An optional server export service renders stored JSON to
   files and writes them to storage.
-- **Import** — best-effort `.docx` import (via `mammoth`), sanitized and parsed
-  into the schema.
+- **Import** — semantic `.docx` import (via `mammoth`): structure and common
+  styles are sanitized and mapped into the schema (see
+  [Import fidelity](#import-fidelity)).
 - **Configurable & extensible** — a single documented props object, per-feature
   toggles, a data-driven customizable toolbar, CSS-variable theming, injectable
   localized strings, custom ProseMirror plugins, custom DOCX node mappings, and
@@ -510,20 +511,25 @@ live page numbers:
 ```
 
 `{page}` and `{pages}` in header/footer text are replaced with the live page
-number and total. Pagination is **purely visual**: it measures block heights and
-inserts spacer decorations plus a page-sheet background layer — it **never
+number and total. Pagination is **purely visual**: it measures content heights
+and inserts spacer decorations plus a page-sheet background layer — it **never
 mutates the document**, so content integrity is guaranteed even if measurement is
 imperfect. It re-measures on edits, resize, and image load.
 
-> Breaks occur at block boundaries; a single block taller than a page overflows
-> rather than being split (there is no line-level layout engine). Set
-> `pagination` at mount time.
+**Line-level splitting.** A tall paragraph, heading, list, or blockquote is split
+at a **line boundary** so it flows naturally across pages — it is not pushed
+whole to the next page or left to overflow. Tables and leaf atoms (images,
+horizontal rules) are not divided: they move to the next page if they fit there,
+and the only content that overflows a page is a *single* line or atom (e.g. an
+image, or one table row) taller than a whole page — which cannot be split by
+definition. Set `pagination` at mount time.
 
 ## DOCX import
 
-Best-effort import of external `.docx` files (`mammoth` converts to HTML, which
-is sanitized and parsed into the schema). Available as a toolbar button (enabled
-by the `docxImport` feature) and imperatively:
+Import external `.docx` files (`mammoth` converts to HTML, which is sanitized and
+parsed into the schema). Structure and common styles are preserved; see
+[Import fidelity](#import-fidelity) for exactly what maps across. Available as a
+toolbar button (enabled by the `docxImport` feature) and imperatively:
 
 ```tsx
 const input = e.target as HTMLInputElement;
@@ -533,14 +539,43 @@ if (file) {
 }
 ```
 
-Supported structures (headings, lists, tables, bold/italic/underline, links,
-images) map across; unsupported Word constructs degrade gracefully. Requires the
-optional `mammoth` dependency. The lower-level converter is also available:
+Requires the optional `mammoth` dependency. The lower-level converter is also
+available, and returns conversion `warnings` plus the intermediate `html`:
 
 ```ts
 import { importDocx } from 'react-next-editor/import';
-const { doc, warnings, html } = await importDocx(arrayBuffer, schema);
+const { doc, warnings, html } = await importDocx(arrayBuffer, schema, {
+  // Optional extra mammoth style mappings (merged with the built-in defaults):
+  styleMap: ["p[style-name='Legal Heading'] => h2:fresh"],
+});
 ```
+
+### Import fidelity
+
+Import is a **semantic** conversion (Word → HTML → schema), not a byte-for-byte
+reproduction. This is intentional: lossless round-tripping of *arbitrary*
+externally-authored Word documents is an explicit non-goal (it would require a
+full Office layout engine). What maps across is well-defined:
+
+| Word construct | Imported as | Notes |
+|----------------|-------------|-------|
+| Headings 1–6 (and 7–9, Title, Subtitle) | `heading` (h1–h6) | 7–9 fold to H6; Title→H1, Subtitle→H2. |
+| Bold, italic | `strong`, `em` | Including the Strong/Emphasis character styles. |
+| Bulleted / numbered lists (nested) | `bullet_list` / `ordered_list` | Nesting preserved. |
+| Tables | `table` | Cells, header row; merged cells best-effort. |
+| Hyperlinks | `link` | URLs sanitized. |
+| Images | inline `image` | Embedded as data URIs. |
+| Blockquotes (Quote styles) | `blockquote` | |
+| Empty paragraphs | preserved | Word's spacing-by-blank-line is kept. |
+| Custom named paragraph styles | mapped via `styleMap` | Supply your own mappings. |
+
+Constructs **not** reproduced (dropped or normalized): direct character
+formatting that Word stores outside named styles — underline, text/highlight
+color, font family/size, and explicit alignment — as well as headers/footers,
+footnotes, comments, fields, text boxes, and section/column layout. Provide a
+custom `styleMap` to capture document-specific named styles. For the canonical,
+loss-free format, persist and reload the editor's own JSON (`onChange` /
+`getJSON`), which round-trips every supported feature exactly.
 
 ## Export
 
@@ -815,10 +850,17 @@ persistence, and every serializer derive from it.
 
 - No separate self-hosted document-rendering server (by design).
 - No real-time multi-user collaboration (the architecture leaves room for it).
-- DOCX import and export are best-effort, not byte-perfect round-trips of
-  arbitrary externally-authored Word documents.
-- Visual pagination breaks at block boundaries (no line-level splitting); a block
-  taller than a page overflows in place.
+- **DOCX is a semantic, not byte-perfect, interchange format.** Export reproduces
+  every supported schema feature; import maps the structures listed in
+  [Import fidelity](#import-fidelity). Lossless round-tripping of *arbitrary*
+  externally-authored Word documents is an explicit non-goal — the editor's own
+  JSON is the canonical, exact format. Direct character formatting and
+  page/section layout from imported files are normalized, not preserved.
+- **Visual pagination splits paragraphs, headings, lists, and blockquotes at line
+  boundaries**, so tall content flows across pages. The only content that
+  overflows a page is a single line or unsplittable atom (an image, or one table
+  row) that is itself taller than a whole page. Pagination is on-screen only —
+  print/PDF use the browser's native page breaking.
 
 ## Development
 
