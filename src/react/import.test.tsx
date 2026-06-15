@@ -54,7 +54,9 @@ describe('<Editor> DOCX import via ref', () => {
     expect(text).toContain('Imported body paragraph.');
     expect(text).not.toContain('placeholder');
     expect(Array.isArray(warnings)).toBe(true);
-  });
+    // mammoth conversion + editor mount is inherently slow under full-suite CPU
+    // contention; allow ample time so the publish gate is never flaky.
+  }, 30000);
 
   it('renders an import button in the toolbar by default', async () => {
     const { container } = render(
