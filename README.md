@@ -18,7 +18,7 @@ const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), 
   ssr: false,
 });
 
-<Editor documentId="judgement-123" placeholder="Start typing…" />;
+<Editor documentId="doc-2024-08" placeholder="Start typing…" />;
 ```
 
 ---
@@ -39,6 +39,7 @@ const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), 
   - [Localization](#localization)
 - [Imperative API (ref)](#imperative-api-ref)
 - [Events](#events)
+- [Custom toolbars & panels](#custom-toolbars--panels)
 - [Visual pagination](#visual-pagination)
 - [DOCX import](#docx-import)
 - [Export](#export)
@@ -156,7 +157,7 @@ export default function MyEditor() {
     <div style={{ height: '80vh' }}>
       <Editor
         ref={ref}
-        documentId="judgement-123"
+        documentId="doc-2024-08"
         placeholder="Start typing…"
         onChange={(json: DocumentJSON) => {
           /* persist / lift state */
@@ -196,6 +197,39 @@ content is unchanged.
 **Plain-text or empty start.** `initialContent` also accepts a plain string
 (split into paragraphs) or `null` (empty document).
 
+### Saving to your backend
+
+`onChange` fires on every keystroke, so debounce writes to your API. For
+full offline-first behaviour (queue offline, upload on reconnect) prefer the
+[`sync` adapter](#offline-first-persistence--sync) instead of saving manually.
+
+```tsx
+import { useMemo, useRef } from 'react';
+import type { DocumentJSON } from 'react-next-editor';
+
+function useDebouncedSave(documentId: string, wait = 800) {
+  const timer = useRef<ReturnType<typeof setTimeout>>();
+  return useMemo(
+    () => (json: DocumentJSON) => {
+      clearTimeout(timer.current);
+      timer.current = setTimeout(() => {
+        void fetch(`/api/documents/${documentId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ doc: json }),
+        });
+      }, wait);
+    },
+    [documentId, wait],
+  );
+}
+
+function MyEditor({ id }: { id: string }) {
+  const save = useDebouncedSave(id);
+  return <Editor documentId={id} onChange={(json) => save(json)} />;
+}
+```
+
 ## Configuration
 
 Everything is driven by a single props object. Every field is optional; sensible
@@ -228,6 +262,7 @@ defaults apply.
 | `ariaLabel` | `string` | `'Document editor'` | Accessible label for the editing region. |
 | `className` | `string` | — | Class added to the root element. |
 | `style` | `React.CSSProperties` | — | Inline style on the root element. |
+| `children` | `React.ReactNode` | — | Custom UI rendered inside the editor context (see [Custom toolbars & panels](#custom-toolbars--panels)). |
 | `onReady` | `(ref: EditorRef) => void` | — | Fired once the editor is mounted. |
 | `onChange` | `(json: DocumentJSON, ref: EditorRef) => void` | — | Fired on every document change. |
 | `onSelectionChange` | `(state: EditorState) => void` | — | Fired on selection change. |
@@ -271,8 +306,8 @@ interface PageConfig {
 
 ### Toolbar
 
-The toolbar is data-driven. Reorder, add, remove, or replace groups of items,
-or hide it entirely.
+The built-in toolbar is data-driven: define ordered **groups** of item ids to
+reorder or remove controls, toggle `sticky`, or hide it with `toolbar={false}`.
 
 ```tsx
 <Editor
@@ -288,10 +323,14 @@ or hide it entirely.
 />
 ```
 
-Pass `toolbar={false}` to render no toolbar and drive the editor through the
-`ref` and your own UI. Item ids are exported as `ToolbarItemId`; the default
+The available item ids are exported as the `ToolbarItemId` union, and the default
 layout is `DEFAULT_TOOLBAR_GROUPS`. Items whose feature is disabled are filtered
 out automatically.
+
+To go beyond reordering — adding your own buttons, dropdowns, or panels — hide
+the built-in toolbar and render your own controls as `children`, reading live
+editor state through `useEditorContext()`. See
+[Custom toolbars & panels](#custom-toolbars--panels).
 
 ### Theming
 
@@ -300,7 +339,7 @@ any `--rne-*` token in your stylesheet, or pass the `theme` prop — no forking.
 
 ```css
 .rne-root {
-  --rne-accent: #df4a36;
+  --rne-accent: #2563eb;
   --rne-page-background: #ffffff;
   --rne-canvas-background: #f3f4f6;
   --rne-toolbar-background: #ffffff;
@@ -349,7 +388,7 @@ A `ref` of type `EditorRef` exposes an imperative handle.
 ```tsx
 const ref = useRef<EditorRef>(null);
 // …
-await ref.current?.exportAs('docx', 'judgement-123');
+await ref.current?.exportAs('docx', 'doc-2024-08');
 const text = ref.current?.getText();
 ```
 
@@ -365,6 +404,92 @@ const text = ref.current?.getText();
 />
 ```
 
+## Custom toolbars & panels
+
+Render your own UI as `children` of `<Editor>`; those components run inside the
+editor's context and can call `useEditorContext()` to read live state and
+dispatch commands. This is the way to build a fully custom toolbar, a slash menu,
+a word-count badge, or an inspector panel.
+
+`useEditorContext()` returns:
+
+| Field | Description |
+|-------|-------------|
+| `state` | The current `EditorState` (re-renders on every change). |
+| `view` | The live `EditorView` (or `null` before mount). |
+| `schema` | The active schema. |
+| `commands` | The command set: `registry` (toolbar commands), `marks`, `blocks`, `links`, `insert`. |
+| `run(command)` | Dispatch a ProseMirror command against the view and refocus. |
+| `importDocx(file)` | Import a `.docx`, replacing content. |
+| `editable` | Whether the editor is currently editable. |
+| `strings`, `features`, `fontFamilies`, `fontSizes`, `colorPalette` | Resolved config. |
+
+A custom bold button that reflects active state:
+
+```tsx
+'use client';
+import { useEditorContext } from 'react-next-editor';
+
+function BoldButton() {
+  const { commands, run, state } = useEditorContext();
+  const active = state ? commands.registry.bold.isActive?.(state) : false;
+  const enabled = state ? commands.registry.bold.isEnabled?.(state) ?? true : false;
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      disabled={!enabled}
+      onMouseDown={(e) => e.preventDefault()} // keep selection
+      onClick={() => run(commands.registry.bold.run)}
+      style={{ fontWeight: active ? 700 : 400 }}
+    >
+      B
+    </button>
+  );
+}
+```
+
+Compose it into a custom toolbar and hide the built-in one with `toolbar={false}`:
+
+```tsx
+import { useEditorContext } from 'react-next-editor';
+
+function MyToolbar() {
+  const { commands, run } = useEditorContext();
+  return (
+    <div className="my-toolbar">
+      <BoldButton />
+      <button onMouseDown={(e) => e.preventDefault()} onClick={() => run(commands.blocks.setHeading(1))}>
+        H1
+      </button>
+      <button onMouseDown={(e) => e.preventDefault()} onClick={() => run(commands.insert.table(3, 3, true))}>
+        Table
+      </button>
+      <button onClick={() => run(commands.links.setLink({ href: 'https://example.com' }))}>
+        Link
+      </button>
+    </div>
+  );
+}
+
+<Editor initialContent={docJson} toolbar={false}>
+  <MyToolbar />
+</Editor>;
+```
+
+Command groups available on `commands`:
+
+- `registry[id]` — every built-in toolbar command (`bold`, `italic`, `alignLeft`,
+  `bulletList`, `addRowAfter`, …) as `{ run, isActive?, isEnabled? }`.
+- `marks` — parametric mark commands: `setFontFamily(name)`, `setFontSize(pt)`,
+  `setTextColor(hex)`, `setHighlight(hex)`, and `getActive*` readers.
+- `blocks` — `setParagraph()`, `setHeading(level)`, `setAlign(a)`, `setLineHeight(n)`.
+- `links` — `setLink({ href })`, `removeLink`, `getActiveLink(state)`.
+- `insert` — `image({ src, alt })`, `table(rows, cols, withHeaderRow)`.
+
+> `useEditorContext()` must be called from a component rendered as a child of
+> `<Editor>`. Outside that subtree it throws.
+
 ## Visual pagination
 
 By default the editor renders a single document-styled flow (cheap and robust;
@@ -377,7 +502,7 @@ live page numbers:
   page={{
     size: 'A4',
     pagination: 'visual',
-    header: { show: true, text: 'Case No. 123', align: 'left' },
+    header: { show: true, text: 'Confidential', align: 'left' },
     footer: { pageNumbers: true }, // "Page X of Y"
     // or a custom footer: footer: { show: true, text: '{page} / {pages}', align: 'center' }
   }}
@@ -435,8 +560,8 @@ import {
   downloadBlob, downloadText,
 } from 'react-next-editor/export';
 
-await exportDocument(doc, 'docx', { filename: 'judgement', page });
-await printDocumentToPdf(doc, { page, title: 'Judgement' });
+await exportDocument(doc, 'docx', { filename: 'report', page });
+await printDocumentToPdf(doc, { page, title: 'Report' });
 const txt = documentToText(doc, { includeLinkUrls: true });
 ```
 
@@ -512,7 +637,7 @@ const remote: RemoteSyncAdapter = {
 };
 
 <Editor
-  documentId="judgement-123"
+  documentId="doc-2024-08"
   persistence={{ enabled: true }}          // IndexedDB autosave (default when documentId is set)
   sync={{ remote, onConflict: (local, remote) => promptUser(local, remote) }}
 />;
@@ -533,10 +658,41 @@ How it works:
   conflict (throw `ConflictError`), the document is parked and `onConflict` fires;
   edits are never silently lost.
 
-Adapters are injectable, so the same editor works against any backend:
-`LocalStoreAdapter`, `RemoteSyncAdapter`, and `AssetUploadAdapter` are all
-exported from `react-next-editor/persistence`. Tokens are supplied through your
-adapter and are never embedded in the editor; all network access must use HTTPS.
+Adapters are injectable, so the same editor works against any backend. Provide a
+custom local store via `persistence.store` and a remote via `sync.remote`:
+
+```tsx
+import { IndexedDBStore } from 'react-next-editor/persistence';
+import type { LocalStoreAdapter, StoredDocument } from 'react-next-editor';
+
+// Example: wrap the built-in store to encrypt documents at rest.
+class EncryptedStore implements LocalStoreAdapter {
+  constructor(private readonly inner = new IndexedDBStore()) {}
+  async putDocument(r: StoredDocument) {
+    return this.inner.putDocument({ ...r, doc: encrypt(r.doc) as never });
+  }
+  async getDocument(id: string) {
+    const r = await this.inner.getDocument(id);
+    return r ? { ...r, doc: decrypt(r.doc) } : null;
+  }
+  // delegate the rest…
+  listDocuments = (...a: never[]) => this.inner.listDocuments(...(a as []));
+  deleteDocument = (id: string) => this.inner.deleteDocument(id);
+  enqueue = this.inner.enqueue.bind(this.inner);
+  dequeue = this.inner.dequeue.bind(this.inner);
+  listOutbox = this.inner.listOutbox.bind(this.inner);
+  clear = this.inner.clear.bind(this.inner);
+}
+
+<Editor documentId="doc-2024-08" persistence={{ store: new EncryptedStore() }} sync={{ remote }} />;
+```
+
+`LocalStoreAdapter`, `RemoteSyncAdapter`, and `AssetUploadAdapter` are exported
+from `react-next-editor/persistence` (and the package root). The editor wires
+`LocalStoreAdapter` (via `persistence.store`) and `RemoteSyncAdapter` (via
+`sync.remote`); `AssetUploadAdapter` is provided as an interface for building your
+own image/asset upload pipeline. Auth tokens are supplied through your adapter and
+are never embedded in the editor; all network access must use HTTPS.
 
 ## Extensibility
 
