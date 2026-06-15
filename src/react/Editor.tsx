@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { EditorView } from 'prosemirror-view';
 import { type Command, EditorState, TextSelection } from 'prosemirror-state';
-import type { Schema } from 'prosemirror-model';
+import { Node as PMNode, type Schema } from 'prosemirror-model';
 
 import type { DocumentJSON, EditorStrings, FeatureFlags, PageConfig, SaveStatus } from '../config/types';
 import {
@@ -112,12 +112,32 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
     [],
   );
 
+  const importDocxIntoEditor = useCallback(
+    async (file: ArrayBuffer | Uint8Array | Blob): Promise<{ warnings: string[] }> => {
+      const view = viewRef.current;
+      if (!view) return { warnings: [] };
+      const { importDocx } = await import('../import/docx');
+      const result = await importDocx(file, view.state.schema);
+      // Replace the whole document via a dispatched transaction so the change is
+      // undoable and flows through onChange/autosave like any other edit.
+      const node = PMNode.fromJSON(view.state.schema, result.doc);
+      const v = viewRef.current;
+      if (v) {
+        const tr = v.state.tr.replaceWith(0, v.state.doc.content.size, node.content);
+        v.dispatch(tr.scrollIntoView());
+      }
+      return { warnings: result.warnings };
+    },
+    [],
+  );
+
   const handle = useMemo<EditorRef>(
     () => ({
       getJSON,
       getText: (options) => documentToText(getJSON(), options),
       getHTML: () => documentToHtml(getJSON()),
       setContent,
+      importDocx: importDocxIntoEditor,
       focus: () => viewRef.current?.focus(),
       isDirty: () => persistenceRef.current?.isDirty() ?? false,
       save: async () => {
@@ -136,7 +156,7 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
       getState: () => viewRef.current?.state ?? null,
       getSchema: () => viewRef.current?.state.schema ?? null,
     }),
-    [getJSON, setContent],
+    [getJSON, setContent, importDocxIntoEditor],
   );
 
   useImperativeHandle(ref, () => handle, [handle]);
@@ -329,8 +349,9 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
       colorPalette: config.colorPalette,
       editable: config.editable,
       run: runCommand,
+      importDocx: importDocxIntoEditor,
     }),
-    [editorState, engine, config, runCommand],
+    [editorState, engine, config, runCommand, importDocxIntoEditor],
   );
 
   // ---- Layout / page surface ----

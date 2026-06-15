@@ -41,6 +41,11 @@
       "import": "./dist/server/index.js",
       "require": "./dist/server/index.cjs"
     },
+    "./import": {
+      "types": "./dist/import/index.d.ts",
+      "import": "./dist/import/index.js",
+      "require": "./dist/import/index.cjs"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
@@ -76,7 +81,8 @@
     "prosemirror-view": "^1.37.1"
   },
   "optionalDependencies": {
-    "docx": "^9.0.0"
+    "docx": "^9.0.0",
+    "mammoth": "^1.12.0"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
@@ -92,6 +98,7 @@
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.1.0",
     "jsdom": "^25.0.1",
+    "mammoth": "^1.12.0",
     "prettier": "^3.4.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

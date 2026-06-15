@@ -98,6 +98,9 @@ export type {
   PdfPrintOptions,
 } from './export/index';
 
+// Document import (best-effort DOCX → schema)
+export { importDocx, type DocxImportResult, type DocxImportOptions } from './import/index';
+
 // Persistence & sync
 export {
   MemoryStore,

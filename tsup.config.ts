@@ -7,6 +7,7 @@ export default defineConfig({
     'export/index': 'src/export/index.ts',
     'persistence/index': 'src/persistence/index.ts',
     'server/index': 'src/server/index.ts',
+    'import/index': 'src/import/index.ts',
   },
   format: ['esm', 'cjs'],
   outExtension({ format }) {
@@ -22,7 +23,7 @@ export default defineConfig({
   // so consumers' single React instance is used and the export libs stay code-split.
   // The server PDF renderers lazily import these only if the consumer installs
   // them; keep them external so the build never requires them.
-  external: ['react', 'react-dom', 'react/jsx-runtime', 'docx', 'playwright', 'puppeteer'],
+  external: ['react', 'react-dom', 'react/jsx-runtime', 'docx', 'mammoth', 'playwright', 'puppeteer'],
   async onSuccess() {
     // Emit the stylesheet at a stable, documented path: dist/styles.css
     const { copyFile } = await import('node:fs/promises');

@@ -60,6 +60,9 @@ const PATHS: Record<string, JSX.Element> = {
   pageBreak: (
     <path d="M6 3h8l4 4v4h-2V8h-3V5H6v6H4V3h2zm-2 13h2v2h2v-2h2v2h2v-2h2v2h2v-2h2v5H4v-5z" />
   ),
+  importDocx: (
+    <path d="M5 3h9l5 5v6h-2V9h-4V5H7v14h5v2H5V3zm8 11 4 4 4-4h-3v-4h-2v4h-3z" />
+  ),
 };
 
 export function ToolbarIcon({ name }: { name: string }): JSX.Element {

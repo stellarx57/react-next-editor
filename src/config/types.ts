@@ -53,6 +53,7 @@ export interface FeatureFlags {
   pageBreak: boolean;
   history: boolean;
   wordCount: boolean;
+  docxImport: boolean;
 }
 
 /** Standard page sizes plus a custom escape hatch. */
@@ -129,7 +130,8 @@ export type ToolbarItemId =
   | 'link'
   | 'image'
   | 'table'
-  | 'pageBreak';
+  | 'pageBreak'
+  | 'importDocx';
 
 /**
  * Toolbar configuration (F-10.6). `groups` defines ordered groups of item ids;
@@ -194,6 +196,7 @@ export interface EditorStrings {
   splitCell: string;
   deleteTable: string;
   pageBreak: string;
+  importDocx: string;
   undo: string;
   redo: string;
   words: string;

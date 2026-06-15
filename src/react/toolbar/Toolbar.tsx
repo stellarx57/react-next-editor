@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, type KeyboardEvent, useCallback, useMemo, useRef } from 'react';
+import { type ChangeEvent, Fragment, type KeyboardEvent, useCallback, useMemo, useRef } from 'react';
 import type { EditorState } from 'prosemirror-state';
 import type { FeatureFlags, ToolbarConfig, ToolbarItemId } from '../../config/types';
 import { DEFAULT_TOOLBAR_GROUPS } from '../../config/defaults';
@@ -38,6 +38,7 @@ const FEATURE_OF: Partial<Record<ToolbarItemId, keyof FeatureFlags>> = {
   image: 'image',
   table: 'table',
   pageBreak: 'pageBreak',
+  importDocx: 'docxImport',
   undo: 'history',
   redo: 'history',
 };
@@ -82,11 +83,27 @@ interface ToolbarProps {
 /** Data-driven, keyboard-accessible toolbar (F-1–F-3, F-10.6, NF-4). */
 export function Toolbar({ config }: ToolbarProps) {
   const ctx = useEditorContext();
-  const { state, commands, strings, features, run, fontFamilies, fontSizes } = ctx;
+  const { state, commands, strings, features, run, fontFamilies, fontSizes, importDocx } = ctx;
 
   const groups = config?.groups ?? DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const onImportFile = useCallback(
+    async (e: ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = ''; // allow re-importing the same file
+      if (!file) return;
+      try {
+        await importDocx(file);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('[react-next-editor] DOCX import failed:', err);
+      }
+    },
+    [importDocx],
+  );
 
   // Arrow-key navigation between toolbar buttons (WCAG toolbar pattern). Tab
   // order is preserved; arrows move focus among enabled buttons. Selects keep
@@ -266,6 +283,20 @@ export function Toolbar({ config }: ToolbarProps) {
             <ToolbarIcon name="table" />
           </button>
         );
+      case 'importDocx':
+        return (
+          <button
+            key={id}
+            type="button"
+            className="rne-btn"
+            title={strings.importDocx}
+            aria-label={strings.importDocx}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <ToolbarIcon name="importDocx" />
+          </button>
+        );
       default:
         return null;
     }
@@ -285,6 +316,15 @@ export function Toolbar({ config }: ToolbarProps) {
           <div className="rne-toolbar-group">{group.map(renderItem)}</div>
         </Fragment>
       ))}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        style={{ display: 'none' }}
+        aria-hidden="true"
+        tabIndex={-1}
+        onChange={onImportFile}
+      />
     </div>
   );
 }

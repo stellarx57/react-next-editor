@@ -25,6 +25,12 @@ export interface EditorRef {
   getHTML(): string;
   /** Replace the document content. */
   setContent(content: DocumentJSON | string | null): void;
+  /**
+   * Import an external `.docx` file, replacing the current content (best-effort,
+   * F-7.2). Requires the optional `mammoth` dependency. Returns conversion
+   * warnings. The change is undoable and triggers `onChange`/autosave.
+   */
+  importDocx(file: ArrayBuffer | Uint8Array | Blob): Promise<{ warnings: string[] }>;
   /** Focus the editing surface. */
   focus(): void;
   /** Whether the document has unsynced local changes. */
@@ -162,4 +168,6 @@ export interface EditorContextValue {
   editable: boolean;
   /** Run a ProseMirror command against the live view and refocus. */
   run: (command: Command) => boolean;
+  /** Import a `.docx` file, replacing content (best-effort). */
+  importDocx: (file: ArrayBuffer | Uint8Array | Blob) => Promise<{ warnings: string[] }>;
 }

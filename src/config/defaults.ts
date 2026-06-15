@@ -36,6 +36,7 @@ export const DEFAULT_FEATURES: FeatureFlags = {
   pageBreak: true,
   history: true,
   wordCount: true,
+  docxImport: true,
 };
 
 /** Physical page dimensions in millimetres for the supported standard sizes. */
@@ -116,6 +117,7 @@ export const DEFAULT_STRINGS: EditorStrings = {
   splitCell: 'Split cell',
   deleteTable: 'Delete table',
   pageBreak: 'Page break',
+  importDocx: 'Import .docx',
   undo: 'Undo',
   redo: 'Redo',
   words: 'words',
@@ -167,6 +169,7 @@ export const DEFAULT_TOOLBAR_GROUPS: ToolbarItemId[][] = [
   ['alignLeft', 'alignCenter', 'alignRight', 'alignJustify'],
   ['bulletList', 'orderedList', 'taskList', 'indent', 'outdent'],
   ['blockquote', 'horizontalRule', 'link', 'image', 'table', 'pageBreak'],
+  ['importDocx'],
 ];
 
 /** Map a {@link ThemeTokens} object to a CSS custom-property style record. */
