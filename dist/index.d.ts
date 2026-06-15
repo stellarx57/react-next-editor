@@ -3,15 +3,16 @@ import { Component, ReactNode, ErrorInfo, JSX } from 'react';
 import { EditorState, Plugin, Command } from 'prosemirror-state';
 import { EditorView } from 'prosemirror-view';
 import { Schema } from 'prosemirror-model';
-import { D as DocumentJSON, S as SaveStatus, E as EditorMode, F as FeatureFlags, P as PageConfig, c as ToolbarConfig, T as ThemeTokens, a as EditorStrings } from './types--ae1gYNt.js';
-export { b as PageSize, d as ToolbarItemId } from './types--ae1gYNt.js';
-import { C as CommandSet, E as EditorCommand } from './sanitize-ChgHA6RC.js';
-export { D as DEFAULT_COLOR_PALETTE, b as DEFAULT_FEATURES, c as DEFAULT_FONT_FAMILIES, d as DEFAULT_FONT_SIZES, e as DEFAULT_PAGE, f as DEFAULT_STRINGS, g as DEFAULT_TOOLBAR_GROUPS, P as PAGE_DIMENSIONS_MM, m as buildPlugins, n as buildSchema, q as countDocument, r as createCommands, s as createDoc, t as createEditorState, w as defaultSchema, R as resolvePageDimensions, S as sanitizeHtml, V as sanitizeImageSrc, W as sanitizeUrl, _ as themeToCssVars } from './sanitize-ChgHA6RC.js';
-import { T as TextConversionOptions, b as DocxNodeConverter } from './docx-DFXJG2yr.js';
-export { a as DocxExportOptions, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from './docx-DFXJG2yr.js';
+import { D as DocumentJSON, S as SaveStatus, E as EditorMode, F as FeatureFlags, P as PageConfig, c as ToolbarConfig, T as ThemeTokens, a as EditorStrings } from './types-B4z0Quvv.js';
+export { e as PageFooterElement, f as PageRunningElement, b as PageSize, d as ToolbarItemId } from './types-B4z0Quvv.js';
+import { C as CommandSet, E as EditorCommand } from './sanitize-KZQRRmo1.js';
+export { D as DEFAULT_COLOR_PALETTE, b as DEFAULT_FEATURES, c as DEFAULT_FONT_FAMILIES, d as DEFAULT_FONT_SIZES, e as DEFAULT_PAGE, f as DEFAULT_STRINGS, g as DEFAULT_TOOLBAR_GROUPS, P as PAGE_DIMENSIONS_MM, o as buildPlugins, p as buildSchema, s as countDocument, t as createCommands, u as createDoc, v as createEditorState, y as defaultSchema, W as resolvePageDimensions, X as sanitizeHtml, Z as sanitizeImageSrc, _ as sanitizeUrl, a2 as themeToCssVars } from './sanitize-KZQRRmo1.js';
+import { T as TextConversionOptions, b as DocxNodeConverter } from './docx-BUrf4PFj.js';
+export { a as DocxExportOptions, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from './docx-BUrf4PFj.js';
 import { LocalStoreAdapter, RemoteSyncAdapter, StoredDocument } from './persistence/index.js';
 export { AssetUploadAdapter, ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, OutboxEntry, RemoteSaveResult, SaveStatusListener, SyncEngine, requestPersistentStorage } from './persistence/index.js';
 export { ExportFormat, PdfPrintOptions, buildPrintDocument, documentToHtml, downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './export/index.js';
+export { DocxImportOptions, DocxImportResult, importDocx } from './import/index.js';
 import 'docx';
 
 /** Imperative handle exposed via `ref` (F-10.15, F-10.16). */
@@ -24,6 +25,14 @@ interface EditorRef {
     getHTML(): string;
     /** Replace the document content. */
     setContent(content: DocumentJSON | string | null): void;
+    /**
+     * Import an external `.docx` file, replacing the current content (best-effort,
+     * F-7.2). Requires the optional `mammoth` dependency. Returns conversion
+     * warnings. The change is undoable and triggers `onChange`/autosave.
+     */
+    importDocx(file: ArrayBuffer | Uint8Array | Blob): Promise<{
+        warnings: string[];
+    }>;
     /** Focus the editing surface. */
     focus(): void;
     /** Whether the document has unsynced local changes. */
@@ -159,6 +168,10 @@ interface EditorContextValue {
     editable: boolean;
     /** Run a ProseMirror command against the live view and refocus. */
     run: (command: Command) => boolean;
+    /** Import a `.docx` file, replacing content (best-effort). */
+    importDocx: (file: ArrayBuffer | Uint8Array | Blob) => Promise<{
+        warnings: string[];
+    }>;
 }
 
 /**

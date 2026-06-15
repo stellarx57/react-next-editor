@@ -47,6 +47,8 @@ export type {
   FeatureFlags,
   PageSize,
   PageConfig,
+  PageRunningElement,
+  PageFooterElement,
   ThemeTokens,
   ToolbarItemId,
   ToolbarConfig,

@@ -1,16 +1,20 @@
 'use strict';
 
-var chunkTBH43OPO_cjs = require('./chunk-TBH43OPO.cjs');
-var chunkSVCLKDG4_cjs = require('./chunk-SVCLKDG4.cjs');
+var chunkGK27G3XT_cjs = require('./chunk-GK27G3XT.cjs');
+var chunkGFNFJ3FL_cjs = require('./chunk-GFNFJ3FL.cjs');
 var chunk3QWXTDLY_cjs = require('./chunk-3QWXTDLY.cjs');
-var chunkXKN6FD32_cjs = require('./chunk-XKN6FD32.cjs');
-var chunkQGO5PVJX_cjs = require('./chunk-QGO5PVJX.cjs');
-var chunkUAHIH4A6_cjs = require('./chunk-UAHIH4A6.cjs');
-var chunkPD75RTIV_cjs = require('./chunk-PD75RTIV.cjs');
+var chunkNJCEHQV3_cjs = require('./chunk-NJCEHQV3.cjs');
+require('./chunk-EFE6RHDL.cjs');
+var chunkXSFBGRGN_cjs = require('./chunk-XSFBGRGN.cjs');
+var chunkTI44I654_cjs = require('./chunk-TI44I654.cjs');
+require('./chunk-TXPLBAH5.cjs');
+var chunk5F6SPYCN_cjs = require('./chunk-5F6SPYCN.cjs');
+var chunkU3O54IYI_cjs = require('./chunk-U3O54IYI.cjs');
 require('./chunk-Q7SFCCGT.cjs');
 var react = require('react');
 var prosemirrorView = require('prosemirror-view');
 var prosemirrorState = require('prosemirror-state');
+var prosemirrorModel = require('prosemirror-model');
 var jsxRuntime = require('react/jsx-runtime');
 
 var EditorContext = react.createContext(null);
@@ -74,7 +78,8 @@ var PATHS = {
   link: /* @__PURE__ */ jsxRuntime.jsx("path", { d: "M10.6 13.4a1 1 0 0 0 1.4 0l3-3a3 3 0 0 0-4.3-4.3l-1.5 1.5 1.4 1.4 1.5-1.5a1 1 0 0 1 1.5 1.5l-3 3a1 1 0 0 0 0 1.4zm2.8-2.8a1 1 0 0 0-1.4 0l-3 3A3 3 0 0 0 13.3 18l1.5-1.5-1.4-1.4-1.5 1.5a1 1 0 0 1-1.5-1.5l3-3a1 1 0 0 0 0-1.4z" }),
   image: /* @__PURE__ */ jsxRuntime.jsx("path", { d: "M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v9l4-4 3 3 3-3 3 3V6H5zm3 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" }),
   table: /* @__PURE__ */ jsxRuntime.jsx("path", { d: "M3 4h18v16H3V4zm2 2v3h5V6H5zm7 0v3h7V6h-7zm-7 5v3h5v-3H5zm7 0v3h7v-3h-7zm-7 5v2h5v-2H5zm7 0v2h7v-2h-7z" }),
-  pageBreak: /* @__PURE__ */ jsxRuntime.jsx("path", { d: "M6 3h8l4 4v4h-2V8h-3V5H6v6H4V3h2zm-2 13h2v2h2v-2h2v2h2v-2h2v2h2v-2h2v5H4v-5z" })
+  pageBreak: /* @__PURE__ */ jsxRuntime.jsx("path", { d: "M6 3h8l4 4v4h-2V8h-3V5H6v6H4V3h2zm-2 13h2v2h2v-2h2v2h2v-2h2v2h2v-2h2v5H4v-5z" }),
+  importDocx: /* @__PURE__ */ jsxRuntime.jsx("path", { d: "M5 3h9l5 5v6h-2V9h-4V5H7v14h5v2H5V3zm8 11 4 4 4-4h-3v-4h-2v4h-3z" })
 };
 function ToolbarIcon({ name }) {
   const path = PATHS[name];
@@ -212,6 +217,7 @@ var FEATURE_OF = {
   image: "image",
   table: "table",
   pageBreak: "pageBreak",
+  importDocx: "docxImport",
   undo: "history",
   redo: "history"
 };
@@ -247,10 +253,24 @@ function activeBlockValue(state) {
 }
 function Toolbar({ config }) {
   const ctx = useEditorContext();
-  const { state, commands, strings, features, run, fontFamilies, fontSizes } = ctx;
-  const groups = config?.groups ?? chunkPD75RTIV_cjs.DEFAULT_TOOLBAR_GROUPS;
+  const { state, commands, strings, features, run, fontFamilies, fontSizes, importDocx: importDocx2 } = ctx;
+  const groups = config?.groups ?? chunkU3O54IYI_cjs.DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
   const toolbarRef = react.useRef(null);
+  const fileInputRef = react.useRef(null);
+  const onImportFile = react.useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        await importDocx2(file);
+      } catch (err) {
+        console.error("[react-next-editor] DOCX import failed:", err);
+      }
+    },
+    [importDocx2]
+  );
   const onToolbarKeyDown = react.useCallback((e) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
     const active = document.activeElement;
@@ -414,11 +434,25 @@ function Toolbar({ config }) {
           },
           id
         );
+      case "importDocx":
+        return /* @__PURE__ */ jsxRuntime.jsx(
+          "button",
+          {
+            type: "button",
+            className: "rne-btn",
+            title: strings.importDocx,
+            "aria-label": strings.importDocx,
+            onMouseDown: (e) => e.preventDefault(),
+            onClick: () => fileInputRef.current?.click(),
+            children: /* @__PURE__ */ jsxRuntime.jsx(ToolbarIcon, { name: "importDocx" })
+          },
+          id
+        );
       default:
         return null;
     }
   }
-  return /* @__PURE__ */ jsxRuntime.jsx(
+  return /* @__PURE__ */ jsxRuntime.jsxs(
     "div",
     {
       ref: toolbarRef,
@@ -426,10 +460,24 @@ function Toolbar({ config }) {
       role: "toolbar",
       "aria-label": "Formatting",
       onKeyDown: onToolbarKeyDown,
-      children: renderedGroups.map((group, gi) => /* @__PURE__ */ jsxRuntime.jsxs(react.Fragment, { children: [
-        gi > 0 && /* @__PURE__ */ jsxRuntime.jsx("span", { className: "rne-toolbar-separator", "aria-hidden": "true" }),
-        /* @__PURE__ */ jsxRuntime.jsx("div", { className: "rne-toolbar-group", children: group.map(renderItem) })
-      ] }, gi))
+      children: [
+        renderedGroups.map((group, gi) => /* @__PURE__ */ jsxRuntime.jsxs(react.Fragment, { children: [
+          gi > 0 && /* @__PURE__ */ jsxRuntime.jsx("span", { className: "rne-toolbar-separator", "aria-hidden": "true" }),
+          /* @__PURE__ */ jsxRuntime.jsx("div", { className: "rne-toolbar-group", children: group.map(renderItem) })
+        ] }, gi)),
+        /* @__PURE__ */ jsxRuntime.jsx(
+          "input",
+          {
+            ref: fileInputRef,
+            type: "file",
+            accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            style: { display: "none" },
+            "aria-hidden": "true",
+            tabIndex: -1,
+            onChange: onImportFile
+          }
+        )
+      ]
     }
   );
 }
@@ -458,7 +506,7 @@ function StatusBar({ saveStatus, hasPersistence }) {
       setStats(null);
       return;
     }
-    const id = setTimeout(() => setStats(chunkTBH43OPO_cjs.countDocument(doc)), 300);
+    const id = setTimeout(() => setStats(chunkGK27G3XT_cjs.countDocument(doc)), 300);
     return () => clearTimeout(id);
   }, [doc]);
   return /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "rne-statusbar", children: [
@@ -471,24 +519,51 @@ function StatusBar({ saveStatus, hasPersistence }) {
 }
 function resolveConfig(props) {
   return {
-    features: { ...chunkPD75RTIV_cjs.DEFAULT_FEATURES, ...props.features },
+    features: { ...chunkU3O54IYI_cjs.DEFAULT_FEATURES, ...props.features },
     page: {
-      ...chunkPD75RTIV_cjs.DEFAULT_PAGE,
+      ...chunkU3O54IYI_cjs.DEFAULT_PAGE,
       ...props.page,
-      margins: { ...chunkPD75RTIV_cjs.DEFAULT_PAGE.margins, ...props.page?.margins }
+      margins: { ...chunkU3O54IYI_cjs.DEFAULT_PAGE.margins, ...props.page?.margins }
     },
-    strings: { ...chunkPD75RTIV_cjs.DEFAULT_STRINGS, ...props.strings },
-    fontFamilies: props.fontFamilies ?? chunkPD75RTIV_cjs.DEFAULT_FONT_FAMILIES,
-    fontSizes: props.fontSizes ?? chunkPD75RTIV_cjs.DEFAULT_FONT_SIZES,
-    colorPalette: props.colorPalette ?? chunkPD75RTIV_cjs.DEFAULT_COLOR_PALETTE,
+    strings: { ...chunkU3O54IYI_cjs.DEFAULT_STRINGS, ...props.strings },
+    fontFamilies: props.fontFamilies ?? chunkU3O54IYI_cjs.DEFAULT_FONT_FAMILIES,
+    fontSizes: props.fontSizes ?? chunkU3O54IYI_cjs.DEFAULT_FONT_SIZES,
+    colorPalette: props.colorPalette ?? chunkU3O54IYI_cjs.DEFAULT_COLOR_PALETTE,
     editable: !(props.readOnly || props.mode === "readonly"),
     placeholder: props.placeholder
+  };
+}
+var PX_PER_MM = 96 / 25.4;
+var PAGE_GAP_PX = 24;
+function computePaginationGeometry(page) {
+  if (page.pagination !== "visual") return null;
+  const { width, height } = chunkU3O54IYI_cjs.resolvePageDimensions(page);
+  const m = page.margins;
+  const pageWidthPx = width * PX_PER_MM;
+  const pageHeightPx = height * PX_PER_MM;
+  const marginTopPx = m.top * PX_PER_MM;
+  const marginBottomPx = m.bottom * PX_PER_MM;
+  const marginLeftPx = m.left * PX_PER_MM;
+  const contentWidthPx = Math.max(1, (width - m.left - m.right) * PX_PER_MM);
+  const contentHeightPx = pageHeightPx - marginTopPx - marginBottomPx;
+  if (contentHeightPx <= 0) return null;
+  return {
+    pageWidthPx,
+    pageHeightPx,
+    marginTopPx,
+    marginBottomPx,
+    marginLeftPx,
+    contentWidthPx,
+    contentHeightPx,
+    interPageOffsetPx: marginBottomPx + PAGE_GAP_PX + marginTopPx
   };
 }
 var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const mountRef = react.useRef(null);
   const viewRef = react.useRef(null);
   const persistenceRef = react.useRef(null);
+  const pageBgRef = react.useRef(null);
+  const remeasureRef = react.useRef(null);
   const propsRef = react.useRef(props);
   propsRef.current = props;
   const config = react.useMemo(() => resolveConfig(props), [props]);
@@ -496,8 +571,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   cfgRef.current = config;
   const featureKey = react.useMemo(() => JSON.stringify(config.features), [config.features]);
   const engine = react.useMemo(() => {
-    const schema = chunkTBH43OPO_cjs.buildSchema(config.features);
-    const commands = chunkTBH43OPO_cjs.createCommands(schema);
+    const schema = chunkGK27G3XT_cjs.buildSchema(config.features);
+    const commands = chunkGK27G3XT_cjs.createCommands(schema);
     return { schema, commands };
   }, [featureKey]);
   const [editorState, setEditorState] = react.useState(null);
@@ -505,25 +580,42 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const [ready, setReady] = react.useState(false);
   const getJSON = react.useCallback(() => {
     const view = viewRef.current;
-    return view ? view.state.doc.toJSON() : chunkTBH43OPO_cjs.createDoc(engine.schema, null).toJSON();
+    return view ? view.state.doc.toJSON() : chunkGK27G3XT_cjs.createDoc(engine.schema, null).toJSON();
   }, [engine.schema]);
   const setContent = react.useCallback(
     (content) => {
       const view = viewRef.current;
       if (!view) return;
-      const doc = chunkTBH43OPO_cjs.createDoc(view.state.schema, content);
+      const doc = chunkGK27G3XT_cjs.createDoc(view.state.schema, content);
       const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
       view.updateState(state);
       setEditorState(state);
     },
     []
   );
+  const importDocxIntoEditor = react.useCallback(
+    async (file) => {
+      const view = viewRef.current;
+      if (!view) return { warnings: [] };
+      const { importDocx: importDocx2 } = await import('./docx-DMMETU7V.cjs');
+      const result = await importDocx2(file, view.state.schema);
+      const node = prosemirrorModel.Node.fromJSON(view.state.schema, result.doc);
+      const v = viewRef.current;
+      if (v) {
+        const tr = v.state.tr.replaceWith(0, v.state.doc.content.size, node.content);
+        v.dispatch(tr.scrollIntoView());
+      }
+      return { warnings: result.warnings };
+    },
+    []
+  );
   const handle = react.useMemo(
     () => ({
       getJSON,
-      getText: (options) => chunkXKN6FD32_cjs.documentToText(getJSON(), options),
-      getHTML: () => chunkQGO5PVJX_cjs.documentToHtml(getJSON()),
+      getText: (options) => chunkNJCEHQV3_cjs.documentToText(getJSON(), options),
+      getHTML: () => chunkTI44I654_cjs.documentToHtml(getJSON()),
       setContent,
+      importDocx: importDocxIntoEditor,
       focus: () => viewRef.current?.focus(),
       isDirty: () => persistenceRef.current?.isDirty() ?? false,
       save: async () => {
@@ -532,7 +624,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       clearLocalData: async () => {
         await persistenceRef.current?.clearLocal();
       },
-      exportAs: (format, filename) => chunkSVCLKDG4_cjs.exportDocument(getJSON(), format, {
+      exportAs: (format, filename) => chunkGFNFJ3FL_cjs.exportDocument(getJSON(), format, {
         filename: filename ?? propsRef.current.documentId,
         page: cfgRef.current.page,
         title: filename ?? propsRef.current.documentId
@@ -541,20 +633,30 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       getState: () => viewRef.current?.state ?? null,
       getSchema: () => viewRef.current?.state.schema ?? null
     }),
-    [getJSON, setContent]
+    [getJSON, setContent, importDocxIntoEditor]
   );
   react.useImperativeHandle(ref, () => handle, [handle]);
   react.useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
-    void chunkUAHIH4A6_cjs.preloadSanitizer();
-    const plugins = chunkTBH43OPO_cjs.buildPlugins(engine.schema, {
+    void chunk5F6SPYCN_cjs.preloadSanitizer();
+    const paginated2 = cfgRef.current.page.pagination === "visual";
+    const plugins = chunkGK27G3XT_cjs.buildPlugins(engine.schema, {
       placeholder: cfgRef.current.placeholder,
       history: cfgRef.current.features.history,
-      extraPlugins: propsRef.current.extensions?.plugins
+      extraPlugins: propsRef.current.extensions?.plugins,
+      pagination: paginated2 ? {
+        getGeometry: () => computePaginationGeometry(cfgRef.current.page),
+        getBackgroundLayer: () => pageBgRef.current,
+        header: cfgRef.current.page.header,
+        footer: cfgRef.current.page.footer,
+        register: (fn) => {
+          remeasureRef.current = fn;
+        }
+      } : void 0
     });
     const initialContent = propsRef.current.value ?? propsRef.current.initialContent ?? null;
-    const state = chunkTBH43OPO_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
+    const state = chunkGK27G3XT_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
     const view = new prosemirrorView.EditorView(mount, {
       state,
       editable: () => !(propsRef.current.readOnly || propsRef.current.mode === "readonly"),
@@ -670,7 +772,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     const current = JSON.stringify(view.state.doc.toJSON());
     const next = JSON.stringify(props.value);
     if (current === next) return;
-    const doc = chunkTBH43OPO_cjs.createDoc(view.state.schema, props.value);
+    const doc = chunkGK27G3XT_cjs.createDoc(view.state.schema, props.value);
     const selectionPos = Math.min(view.state.selection.from, doc.content.size);
     const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
     const withSel = state.apply(
@@ -698,21 +800,50 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       fontSizes: config.fontSizes,
       colorPalette: config.colorPalette,
       editable: config.editable,
-      run: runCommand
+      run: runCommand,
+      importDocx: importDocxIntoEditor
     }),
-    [editorState, engine, config, runCommand]
+    [editorState, engine, config, runCommand, importDocxIntoEditor]
   );
-  const { width } = chunkPD75RTIV_cjs.resolvePageDimensions(config.page);
+  const { width } = chunkU3O54IYI_cjs.resolvePageDimensions(config.page);
   const showChrome = config.page.showPageChrome;
-  const rootStyle = react.useMemo(
-    () => ({
-      ...chunkPD75RTIV_cjs.themeToCssVars(props.theme),
-      "--rne-page-width": `${width}mm`,
-      "--rne-page-padding": `${config.page.margins.top}mm ${config.page.margins.right}mm ${config.page.margins.bottom}mm ${config.page.margins.left}mm`,
-      ...props.style
+  const paginated = config.page.pagination === "visual";
+  const pageGeometryKey = react.useMemo(
+    () => JSON.stringify({
+      p: config.page.pagination,
+      s: config.page.size,
+      o: config.page.orientation,
+      w: config.page.widthMm,
+      h: config.page.heightMm,
+      m: config.page.margins,
+      hdr: config.page.header,
+      ftr: config.page.footer
     }),
-    [props.theme, props.style, width, config.page.margins]
+    [config.page]
   );
+  react.useEffect(() => {
+    if (paginated) remeasureRef.current?.();
+  }, [pageGeometryKey, paginated]);
+  const geometry = react.useMemo(
+    () => computePaginationGeometry(config.page),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pageGeometryKey]
+  );
+  const rootStyle = react.useMemo(() => {
+    const base = {
+      ...chunkU3O54IYI_cjs.themeToCssVars(props.theme),
+      "--rne-page-width": `${width}mm`,
+      "--rne-page-padding": `${config.page.margins.top}mm ${config.page.margins.right}mm ${config.page.margins.bottom}mm ${config.page.margins.left}mm`
+    };
+    if (geometry) {
+      base["--rne-page-w"] = `${geometry.pageWidthPx}px`;
+      base["--rne-page-h"] = `${geometry.pageHeightPx}px`;
+      base["--rne-content-w"] = `${geometry.contentWidthPx}px`;
+      base["--rne-mt"] = `${geometry.marginTopPx}px`;
+      base["--rne-ml"] = `${geometry.marginLeftPx}px`;
+    }
+    return { ...base, ...props.style };
+  }, [props.theme, props.style, width, config.page.margins, geometry]);
   const toolbarEnabled = props.toolbar !== false && (props.toolbar?.enabled ?? true) && config.editable;
   const statusBarEnabled = props.statusBar ?? true;
   return /* @__PURE__ */ jsxRuntime.jsx(EditorContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsxRuntime.jsxs(
@@ -724,7 +855,16 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       dir: props.dir ?? "ltr",
       children: [
         toolbarEnabled && /* @__PURE__ */ jsxRuntime.jsx(Toolbar, { config: props.toolbar || void 0 }),
-        /* @__PURE__ */ jsxRuntime.jsx("div", { className: `rne-canvas${showChrome ? "" : " rne-canvas--plain"}`, children: /* @__PURE__ */ jsxRuntime.jsx("div", { className: "rne-page", children: /* @__PURE__ */ jsxRuntime.jsx("div", { ref: mountRef, className: "rne-mount" }) }) }),
+        /* @__PURE__ */ jsxRuntime.jsx(
+          "div",
+          {
+            className: `rne-canvas${showChrome ? "" : " rne-canvas--plain"}${paginated ? " rne-canvas--paged" : ""}`,
+            children: paginated ? /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "rne-paged", children: [
+              /* @__PURE__ */ jsxRuntime.jsx("div", { ref: pageBgRef, className: "rne-page-bg", "aria-hidden": "true" }),
+              /* @__PURE__ */ jsxRuntime.jsx("div", { ref: mountRef, className: "rne-mount rne-mount--paged" })
+            ] }) : /* @__PURE__ */ jsxRuntime.jsx("div", { className: "rne-page", children: /* @__PURE__ */ jsxRuntime.jsx("div", { ref: mountRef, className: "rne-mount" }) })
+          }
+        ),
         statusBarEnabled && /* @__PURE__ */ jsxRuntime.jsx(StatusBar, { saveStatus, hasPersistence: !!props.documentId })
       ]
     }
@@ -736,47 +876,47 @@ var Editor = react.forwardRef(function Editor2(props, ref) {
 
 Object.defineProperty(exports, "buildPlugins", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.buildPlugins; }
+  get: function () { return chunkGK27G3XT_cjs.buildPlugins; }
 });
 Object.defineProperty(exports, "buildSchema", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.buildSchema; }
+  get: function () { return chunkGK27G3XT_cjs.buildSchema; }
 });
 Object.defineProperty(exports, "countDocument", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.countDocument; }
+  get: function () { return chunkGK27G3XT_cjs.countDocument; }
 });
 Object.defineProperty(exports, "createCommands", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.createCommands; }
+  get: function () { return chunkGK27G3XT_cjs.createCommands; }
 });
 Object.defineProperty(exports, "createDoc", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.createDoc; }
+  get: function () { return chunkGK27G3XT_cjs.createDoc; }
 });
 Object.defineProperty(exports, "createEditorState", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.createEditorState; }
+  get: function () { return chunkGK27G3XT_cjs.createEditorState; }
 });
 Object.defineProperty(exports, "defaultSchema", {
   enumerable: true,
-  get: function () { return chunkTBH43OPO_cjs.defaultSchema; }
+  get: function () { return chunkGK27G3XT_cjs.defaultSchema; }
 });
 Object.defineProperty(exports, "downloadBlob", {
   enumerable: true,
-  get: function () { return chunkSVCLKDG4_cjs.downloadBlob; }
+  get: function () { return chunkGFNFJ3FL_cjs.downloadBlob; }
 });
 Object.defineProperty(exports, "downloadText", {
   enumerable: true,
-  get: function () { return chunkSVCLKDG4_cjs.downloadText; }
+  get: function () { return chunkGFNFJ3FL_cjs.downloadText; }
 });
 Object.defineProperty(exports, "exportDocument", {
   enumerable: true,
-  get: function () { return chunkSVCLKDG4_cjs.exportDocument; }
+  get: function () { return chunkGFNFJ3FL_cjs.exportDocument; }
 });
 Object.defineProperty(exports, "printDocumentToPdf", {
   enumerable: true,
-  get: function () { return chunkSVCLKDG4_cjs.printDocumentToPdf; }
+  get: function () { return chunkGFNFJ3FL_cjs.printDocumentToPdf; }
 });
 Object.defineProperty(exports, "ConflictError", {
   enumerable: true,
@@ -808,75 +948,79 @@ Object.defineProperty(exports, "requestPersistentStorage", {
 });
 Object.defineProperty(exports, "documentToDocxBlob", {
   enumerable: true,
-  get: function () { return chunkXKN6FD32_cjs.documentToDocxBlob; }
+  get: function () { return chunkNJCEHQV3_cjs.documentToDocxBlob; }
 });
 Object.defineProperty(exports, "documentToDocxBuffer", {
   enumerable: true,
-  get: function () { return chunkXKN6FD32_cjs.documentToDocxBuffer; }
+  get: function () { return chunkNJCEHQV3_cjs.documentToDocxBuffer; }
 });
 Object.defineProperty(exports, "documentToText", {
   enumerable: true,
-  get: function () { return chunkXKN6FD32_cjs.documentToText; }
+  get: function () { return chunkNJCEHQV3_cjs.documentToText; }
+});
+Object.defineProperty(exports, "importDocx", {
+  enumerable: true,
+  get: function () { return chunkXSFBGRGN_cjs.importDocx; }
 });
 Object.defineProperty(exports, "buildPrintDocument", {
   enumerable: true,
-  get: function () { return chunkQGO5PVJX_cjs.buildPrintDocument; }
+  get: function () { return chunkTI44I654_cjs.buildPrintDocument; }
 });
 Object.defineProperty(exports, "documentToHtml", {
   enumerable: true,
-  get: function () { return chunkQGO5PVJX_cjs.documentToHtml; }
+  get: function () { return chunkTI44I654_cjs.documentToHtml; }
 });
 Object.defineProperty(exports, "sanitizeHtml", {
   enumerable: true,
-  get: function () { return chunkUAHIH4A6_cjs.sanitizeHtml; }
+  get: function () { return chunk5F6SPYCN_cjs.sanitizeHtml; }
 });
 Object.defineProperty(exports, "sanitizeImageSrc", {
   enumerable: true,
-  get: function () { return chunkUAHIH4A6_cjs.sanitizeImageSrc; }
+  get: function () { return chunk5F6SPYCN_cjs.sanitizeImageSrc; }
 });
 Object.defineProperty(exports, "sanitizeUrl", {
   enumerable: true,
-  get: function () { return chunkUAHIH4A6_cjs.sanitizeUrl; }
+  get: function () { return chunk5F6SPYCN_cjs.sanitizeUrl; }
 });
 Object.defineProperty(exports, "DEFAULT_COLOR_PALETTE", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_COLOR_PALETTE; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_COLOR_PALETTE; }
 });
 Object.defineProperty(exports, "DEFAULT_FEATURES", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_FEATURES; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_FEATURES; }
 });
 Object.defineProperty(exports, "DEFAULT_FONT_FAMILIES", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_FONT_FAMILIES; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_FONT_FAMILIES; }
 });
 Object.defineProperty(exports, "DEFAULT_FONT_SIZES", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_FONT_SIZES; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_FONT_SIZES; }
 });
 Object.defineProperty(exports, "DEFAULT_PAGE", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_PAGE; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_PAGE; }
 });
 Object.defineProperty(exports, "DEFAULT_STRINGS", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_STRINGS; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_STRINGS; }
 });
 Object.defineProperty(exports, "DEFAULT_TOOLBAR_GROUPS", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.DEFAULT_TOOLBAR_GROUPS; }
+  get: function () { return chunkU3O54IYI_cjs.DEFAULT_TOOLBAR_GROUPS; }
 });
 Object.defineProperty(exports, "PAGE_DIMENSIONS_MM", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.PAGE_DIMENSIONS_MM; }
+  get: function () { return chunkU3O54IYI_cjs.PAGE_DIMENSIONS_MM; }
 });
 Object.defineProperty(exports, "resolvePageDimensions", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.resolvePageDimensions; }
+  get: function () { return chunkU3O54IYI_cjs.resolvePageDimensions; }
 });
 Object.defineProperty(exports, "themeToCssVars", {
   enumerable: true,
-  get: function () { return chunkPD75RTIV_cjs.themeToCssVars; }
+  get: function () { return chunkU3O54IYI_cjs.themeToCssVars; }
 });
 exports.Editor = Editor;
 exports.EditorContext = EditorContext;

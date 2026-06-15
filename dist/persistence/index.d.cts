@@ -1,4 +1,4 @@
-import { D as DocumentJSON, S as SaveStatus } from '../types--ae1gYNt.cjs';
+import { D as DocumentJSON, S as SaveStatus } from '../types-B4z0Quvv.cjs';
 
 /**
  * Persistence and sync adapter interfaces (F-10.12). The editor core knows

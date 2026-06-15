@@ -207,6 +207,72 @@
   padding: 16px;
 }
 
+/* ---- Visual pagination (G-1 = B): discrete on-screen page sheets ---- */
+.rne-canvas--paged {
+  align-items: flex-start;
+  /* `safe` centring keeps the left edge reachable when the page (fixed width)
+     is wider than the viewport, so the canvas scrolls horizontally instead of
+     clipping (responsive on small screens). */
+  justify-content: safe center;
+}
+
+.rne-paged {
+  position: relative;
+  width: var(--rne-page-w, 794px);
+  flex: 0 0 auto;
+  margin: 0 auto;
+}
+
+/* Background layer: white page sheets + repeating header/footer, drawn behind. */
+.rne-page-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--rne-page-w, 794px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.rne-page-sheet {
+  position: absolute;
+  left: 0;
+  background: var(--rne-page-background, #fff);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.rne-page-header,
+.rne-page-footer {
+  font-size: 10pt;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Content layer sits above the sheets, inset by the page margins. */
+.rne-mount--paged {
+  position: relative;
+  z-index: 1;
+}
+
+.rne-mount--paged .ProseMirror {
+  position: relative;
+  z-index: 1;
+  box-sizing: content-box;
+  width: var(--rne-content-w, 743px);
+  padding-top: var(--rne-mt, 96px);
+  padding-left: var(--rne-ml, 96px);
+  padding-right: 0;
+  padding-bottom: 0;
+}
+
+/* Transparent spacers create the visual gap between pages (sheets show through). */
+.rne-page-spacer {
+  width: 100%;
+  user-select: none;
+  pointer-events: none;
+}
+
 /* ---- ProseMirror base (inlined so consumers import only this stylesheet) ---- */
 .rne-root .ProseMirror {
   position: relative;
@@ -585,5 +651,20 @@
   }
   .rne-root .ProseMirror .rne-page-break::after {
     display: none;
+  }
+  /* In print, the browser paginates natively via @page — drop the on-screen
+     pagination overlay so it doesn't add phantom gaps. */
+  .rne-page-bg {
+    display: none !important;
+  }
+  .rne-page-spacer {
+    display: none !important;
+  }
+  .rne-mount--paged .ProseMirror {
+    width: auto;
+    padding: 0;
+  }
+  .rne-paged {
+    width: auto;
   }
 }

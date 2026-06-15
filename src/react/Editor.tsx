@@ -26,6 +26,7 @@ import {
 } from '../config/defaults';
 import { buildSchema } from '../core/schema/schema';
 import { buildPlugins } from '../core/plugins/index';
+import type { PaginationGeometry } from '../core/pagination/plugin';
 import { createCommands, type CommandSet } from '../core/commands/index';
 import { createDoc, createEditorState } from '../core/state/createEditorState';
 import { preloadSanitizer } from '../security/sanitize';
@@ -70,10 +71,42 @@ function resolveConfig(props: EditorProps): ResolvedConfig {
   };
 }
 
+/** CSS pixels per millimetre at 96 DPI (the CSS reference). */
+const PX_PER_MM = 96 / 25.4;
+/** Visual gap (px) drawn on the canvas between consecutive page sheets. */
+const PAGE_GAP_PX = 24;
+
+/** Convert a page configuration (mm) into concrete pixel geometry, or null. */
+function computePaginationGeometry(page: PageConfig): PaginationGeometry | null {
+  if (page.pagination !== 'visual') return null;
+  const { width, height } = resolvePageDimensions(page);
+  const m = page.margins;
+  const pageWidthPx = width * PX_PER_MM;
+  const pageHeightPx = height * PX_PER_MM;
+  const marginTopPx = m.top * PX_PER_MM;
+  const marginBottomPx = m.bottom * PX_PER_MM;
+  const marginLeftPx = m.left * PX_PER_MM;
+  const contentWidthPx = Math.max(1, (width - m.left - m.right) * PX_PER_MM);
+  const contentHeightPx = pageHeightPx - marginTopPx - marginBottomPx;
+  if (contentHeightPx <= 0) return null;
+  return {
+    pageWidthPx,
+    pageHeightPx,
+    marginTopPx,
+    marginBottomPx,
+    marginLeftPx,
+    contentWidthPx,
+    contentHeightPx,
+    interPageOffsetPx: marginBottomPx + PAGE_GAP_PX + marginTopPx,
+  };
+}
+
 const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(props, ref) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
   const persistenceRef = useRef<DocumentPersistence | null>(null);
+  const pageBgRef = useRef<HTMLDivElement | null>(null);
+  const remeasureRef = useRef<(() => void) | null>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
 
@@ -168,10 +201,22 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
 
     void preloadSanitizer();
 
+    const paginated = cfgRef.current.page.pagination === 'visual';
     const plugins = buildPlugins(engine.schema, {
       placeholder: cfgRef.current.placeholder,
       history: cfgRef.current.features.history,
       extraPlugins: propsRef.current.extensions?.plugins,
+      pagination: paginated
+        ? {
+            getGeometry: () => computePaginationGeometry(cfgRef.current.page),
+            getBackgroundLayer: () => pageBgRef.current,
+            header: cfgRef.current.page.header,
+            footer: cfgRef.current.page.footer,
+            register: (fn) => {
+              remeasureRef.current = fn;
+            },
+          }
+        : undefined,
     });
 
     const initialContent =
@@ -357,15 +402,48 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
   // ---- Layout / page surface ----
   const { width } = resolvePageDimensions(config.page);
   const showChrome = config.page.showPageChrome;
-  const rootStyle = useMemo(
-    () => ({
+  const paginated = config.page.pagination === 'visual';
+
+  // Stable signature of the page geometry; force a re-measure when it changes.
+  const pageGeometryKey = useMemo(
+    () =>
+      JSON.stringify({
+        p: config.page.pagination,
+        s: config.page.size,
+        o: config.page.orientation,
+        w: config.page.widthMm,
+        h: config.page.heightMm,
+        m: config.page.margins,
+        hdr: config.page.header,
+        ftr: config.page.footer,
+      }),
+    [config.page],
+  );
+  useEffect(() => {
+    if (paginated) remeasureRef.current?.();
+  }, [pageGeometryKey, paginated]);
+
+  const geometry = useMemo(
+    () => computePaginationGeometry(config.page),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pageGeometryKey],
+  );
+
+  const rootStyle = useMemo(() => {
+    const base: Record<string, string> = {
       ...themeToCssVars(props.theme),
       '--rne-page-width': `${width}mm`,
       '--rne-page-padding': `${config.page.margins.top}mm ${config.page.margins.right}mm ${config.page.margins.bottom}mm ${config.page.margins.left}mm`,
-      ...props.style,
-    }),
-    [props.theme, props.style, width, config.page.margins],
-  );
+    };
+    if (geometry) {
+      base['--rne-page-w'] = `${geometry.pageWidthPx}px`;
+      base['--rne-page-h'] = `${geometry.pageHeightPx}px`;
+      base['--rne-content-w'] = `${geometry.contentWidthPx}px`;
+      base['--rne-mt'] = `${geometry.marginTopPx}px`;
+      base['--rne-ml'] = `${geometry.marginLeftPx}px`;
+    }
+    return { ...base, ...(props.style as Record<string, string> | undefined) };
+  }, [props.theme, props.style, width, config.page.margins, geometry]);
 
   const toolbarEnabled = props.toolbar !== false && (props.toolbar?.enabled ?? true) && config.editable;
   const statusBarEnabled = props.statusBar ?? true;
@@ -379,10 +457,19 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
         dir={props.dir ?? 'ltr'}
       >
         {toolbarEnabled && <Toolbar config={props.toolbar || undefined} />}
-        <div className={`rne-canvas${showChrome ? '' : ' rne-canvas--plain'}`}>
-          <div className="rne-page">
-            <div ref={mountRef} className="rne-mount" />
-          </div>
+        <div
+          className={`rne-canvas${showChrome ? '' : ' rne-canvas--plain'}${paginated ? ' rne-canvas--paged' : ''}`}
+        >
+          {paginated ? (
+            <div className="rne-paged">
+              <div ref={pageBgRef} className="rne-page-bg" aria-hidden="true" />
+              <div ref={mountRef} className="rne-mount rne-mount--paged" />
+            </div>
+          ) : (
+            <div className="rne-page">
+              <div ref={mountRef} className="rne-mount" />
+            </div>
+          )}
         </div>
         {statusBarEnabled && <StatusBar saveStatus={saveStatus} hasPersistence={!!props.documentId} />}
       </div>

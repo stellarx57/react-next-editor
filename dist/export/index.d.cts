@@ -1,6 +1,6 @@
-import { T as TextConversionOptions } from '../docx-ipBJ6tJU.cjs';
-export { D as DocxContext, a as DocxExportOptions, b as DocxNodeConverter, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from '../docx-ipBJ6tJU.cjs';
-import { D as DocumentJSON, P as PageConfig } from '../types--ae1gYNt.cjs';
+import { T as TextConversionOptions } from '../docx-DLfSdvXm.cjs';
+export { D as DocxContext, a as DocxExportOptions, b as DocxNodeConverter, d as documentToDocxBlob, c as documentToDocxBuffer, e as documentToText } from '../docx-DLfSdvXm.cjs';
+import { D as DocumentJSON, P as PageConfig } from '../types-B4z0Quvv.cjs';
 import 'docx';
 
 /** Serialize a document (JSON) to an HTML fragment (the document body content). */

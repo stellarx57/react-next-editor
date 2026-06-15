@@ -75,6 +75,30 @@ export interface PageConfig {
   };
   /** Show the page as a white sheet on a canvas background (single-flow model). */
   showPageChrome: boolean;
+  /**
+   * Pagination model (§10.1). `'none'` (default) is the document-styled single
+   * flow; `'visual'` splits content across discrete on-screen page sheets with
+   * repeating headers/footers and live page numbers (F-5.3–F-5.5).
+   */
+  pagination?: 'none' | 'visual';
+  /** Repeating page header (visual pagination only). */
+  header?: PageRunningElement;
+  /** Repeating page footer (visual pagination only). */
+  footer?: PageFooterElement;
+}
+
+/** A repeating page header/footer element (visual pagination). */
+export interface PageRunningElement {
+  show?: boolean;
+  /** Static text; `{page}` and `{pages}` are replaced with the live numbers. */
+  text?: string;
+  align?: 'left' | 'center' | 'right';
+}
+
+/** A repeating page footer, optionally showing automatic page numbers (F-5.5). */
+export interface PageFooterElement extends PageRunningElement {
+  /** Show "Page X of Y" automatically when no explicit `text` is given. */
+  pageNumbers?: boolean;
 }
 
 /**

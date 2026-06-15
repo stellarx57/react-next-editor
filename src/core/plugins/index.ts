@@ -9,11 +9,18 @@ import { buildInputRules } from './inputrules';
 import { buildKeymapPlugins } from './keymap';
 import { placeholderPlugin } from './placeholder';
 import { taskListPlugin } from './taskList';
+import { paginationPlugin, type PaginationOptions } from '../pagination/plugin';
 
 export { buildInputRules } from './inputrules';
 export { buildKeymapPlugins } from './keymap';
 export { placeholderPlugin } from './placeholder';
 export { taskListPlugin } from './taskList';
+export {
+  paginationPlugin,
+  paginationKey,
+  type PaginationOptions,
+  type PaginationGeometry,
+} from '../pagination/plugin';
 
 /** Sanitize pasted HTML before ProseMirror parses it (F-11.4, F-12.1). */
 function pasteSanitizerPlugin(): Plugin {
@@ -33,6 +40,8 @@ export interface BuildPluginsOptions {
   history?: boolean;
   /** Additional plugins appended after the built-ins (extension API). */
   extraPlugins?: Plugin[];
+  /** Visual pagination options. When provided, the pagination plugin is added. */
+  pagination?: PaginationOptions;
   /**
    * Optional hook invoked for every dispatched transaction (used by the React
    * layer to surface change/selection events without re-rendering the surface).
@@ -71,6 +80,10 @@ export function buildPlugins(schema: Schema, options: BuildPluginsOptions = {}):
 
   if (options.placeholder) {
     plugins.push(placeholderPlugin(options.placeholder));
+  }
+
+  if (options.pagination) {
+    plugins.push(paginationPlugin(options.pagination));
   }
 
   if (options.appendTransaction) {

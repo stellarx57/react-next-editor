@@ -1,21 +1,25 @@
-import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-XXHLJ6HE.js';
-export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-XXHLJ6HE.js';
-import { exportDocument } from './chunk-CELJ2AMM.js';
-export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-CELJ2AMM.js';
+import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-GTSOC5MS.js';
+export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-GTSOC5MS.js';
+import { exportDocument } from './chunk-IG2YLUFW.js';
+export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-IG2YLUFW.js';
 import { IndexedDBStore, DocumentPersistence, SyncEngine, ConnectivityMonitor, requestPersistentStorage } from './chunk-O4GTLC3T.js';
 export { ConflictError, ConnectivityMonitor, DocumentPersistence, IndexedDBStore, MemoryStore, SyncEngine, requestPersistentStorage } from './chunk-O4GTLC3T.js';
-import { documentToText } from './chunk-5XDDJL5V.js';
-export { documentToDocxBlob, documentToDocxBuffer, documentToText } from './chunk-5XDDJL5V.js';
-import { documentToHtml } from './chunk-IJ6OF636.js';
-export { buildPrintDocument, documentToHtml } from './chunk-IJ6OF636.js';
-import { preloadSanitizer } from './chunk-RDDFH5FA.js';
-export { sanitizeHtml, sanitizeImageSrc, sanitizeUrl } from './chunk-RDDFH5FA.js';
-import { resolvePageDimensions, themeToCssVars, DEFAULT_COLOR_PALETTE, DEFAULT_FONT_SIZES, DEFAULT_FONT_FAMILIES, DEFAULT_STRINGS, DEFAULT_PAGE, DEFAULT_FEATURES, DEFAULT_TOOLBAR_GROUPS } from './chunk-SKCOHLJH.js';
-export { DEFAULT_COLOR_PALETTE, DEFAULT_FEATURES, DEFAULT_FONT_FAMILIES, DEFAULT_FONT_SIZES, DEFAULT_PAGE, DEFAULT_STRINGS, DEFAULT_TOOLBAR_GROUPS, PAGE_DIMENSIONS_MM, resolvePageDimensions, themeToCssVars } from './chunk-SKCOHLJH.js';
+import { documentToText } from './chunk-QROUNVQK.js';
+export { documentToDocxBlob, documentToDocxBuffer, documentToText } from './chunk-QROUNVQK.js';
+import './chunk-G6YRIEK4.js';
+export { importDocx } from './chunk-G3UUIPF2.js';
+import { documentToHtml } from './chunk-7VYJDBH7.js';
+export { buildPrintDocument, documentToHtml } from './chunk-7VYJDBH7.js';
+import './chunk-T6FR37IC.js';
+import { preloadSanitizer } from './chunk-6NTSXJX4.js';
+export { sanitizeHtml, sanitizeImageSrc, sanitizeUrl } from './chunk-6NTSXJX4.js';
+import { resolvePageDimensions, themeToCssVars, DEFAULT_COLOR_PALETTE, DEFAULT_FONT_SIZES, DEFAULT_FONT_FAMILIES, DEFAULT_STRINGS, DEFAULT_PAGE, DEFAULT_FEATURES, DEFAULT_TOOLBAR_GROUPS } from './chunk-JQXTWLHL.js';
+export { DEFAULT_COLOR_PALETTE, DEFAULT_FEATURES, DEFAULT_FONT_FAMILIES, DEFAULT_FONT_SIZES, DEFAULT_PAGE, DEFAULT_STRINGS, DEFAULT_TOOLBAR_GROUPS, PAGE_DIMENSIONS_MM, resolvePageDimensions, themeToCssVars } from './chunk-JQXTWLHL.js';
 import './chunk-PZ5AY32C.js';
 import { createContext, forwardRef, useRef, useMemo, useState, useCallback, useImperativeHandle, useEffect, Fragment, Component, useContext } from 'react';
 import { EditorView } from 'prosemirror-view';
 import { EditorState, TextSelection } from 'prosemirror-state';
+import { Node } from 'prosemirror-model';
 import { jsx, jsxs } from 'react/jsx-runtime';
 
 var EditorContext = createContext(null);
@@ -79,7 +83,8 @@ var PATHS = {
   link: /* @__PURE__ */ jsx("path", { d: "M10.6 13.4a1 1 0 0 0 1.4 0l3-3a3 3 0 0 0-4.3-4.3l-1.5 1.5 1.4 1.4 1.5-1.5a1 1 0 0 1 1.5 1.5l-3 3a1 1 0 0 0 0 1.4zm2.8-2.8a1 1 0 0 0-1.4 0l-3 3A3 3 0 0 0 13.3 18l1.5-1.5-1.4-1.4-1.5 1.5a1 1 0 0 1-1.5-1.5l3-3a1 1 0 0 0 0-1.4z" }),
   image: /* @__PURE__ */ jsx("path", { d: "M4 4h16a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zm1 2v9l4-4 3 3 3-3 3 3V6H5zm3 1.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" }),
   table: /* @__PURE__ */ jsx("path", { d: "M3 4h18v16H3V4zm2 2v3h5V6H5zm7 0v3h7V6h-7zm-7 5v3h5v-3H5zm7 0v3h7v-3h-7zm-7 5v2h5v-2H5zm7 0v2h7v-2h-7z" }),
-  pageBreak: /* @__PURE__ */ jsx("path", { d: "M6 3h8l4 4v4h-2V8h-3V5H6v6H4V3h2zm-2 13h2v2h2v-2h2v2h2v-2h2v2h2v-2h2v5H4v-5z" })
+  pageBreak: /* @__PURE__ */ jsx("path", { d: "M6 3h8l4 4v4h-2V8h-3V5H6v6H4V3h2zm-2 13h2v2h2v-2h2v2h2v-2h2v2h2v-2h2v5H4v-5z" }),
+  importDocx: /* @__PURE__ */ jsx("path", { d: "M5 3h9l5 5v6h-2V9h-4V5H7v14h5v2H5V3zm8 11 4 4 4-4h-3v-4h-2v4h-3z" })
 };
 function ToolbarIcon({ name }) {
   const path = PATHS[name];
@@ -217,6 +222,7 @@ var FEATURE_OF = {
   image: "image",
   table: "table",
   pageBreak: "pageBreak",
+  importDocx: "docxImport",
   undo: "history",
   redo: "history"
 };
@@ -252,10 +258,24 @@ function activeBlockValue(state) {
 }
 function Toolbar({ config }) {
   const ctx = useEditorContext();
-  const { state, commands, strings, features, run, fontFamilies, fontSizes } = ctx;
+  const { state, commands, strings, features, run, fontFamilies, fontSizes, importDocx: importDocx2 } = ctx;
   const groups = config?.groups ?? DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
   const toolbarRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const onImportFile = useCallback(
+    async (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+      try {
+        await importDocx2(file);
+      } catch (err) {
+        console.error("[react-next-editor] DOCX import failed:", err);
+      }
+    },
+    [importDocx2]
+  );
   const onToolbarKeyDown = useCallback((e) => {
     if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
     const active = document.activeElement;
@@ -419,11 +439,25 @@ function Toolbar({ config }) {
           },
           id
         );
+      case "importDocx":
+        return /* @__PURE__ */ jsx(
+          "button",
+          {
+            type: "button",
+            className: "rne-btn",
+            title: strings.importDocx,
+            "aria-label": strings.importDocx,
+            onMouseDown: (e) => e.preventDefault(),
+            onClick: () => fileInputRef.current?.click(),
+            children: /* @__PURE__ */ jsx(ToolbarIcon, { name: "importDocx" })
+          },
+          id
+        );
       default:
         return null;
     }
   }
-  return /* @__PURE__ */ jsx(
+  return /* @__PURE__ */ jsxs(
     "div",
     {
       ref: toolbarRef,
@@ -431,10 +465,24 @@ function Toolbar({ config }) {
       role: "toolbar",
       "aria-label": "Formatting",
       onKeyDown: onToolbarKeyDown,
-      children: renderedGroups.map((group, gi) => /* @__PURE__ */ jsxs(Fragment, { children: [
-        gi > 0 && /* @__PURE__ */ jsx("span", { className: "rne-toolbar-separator", "aria-hidden": "true" }),
-        /* @__PURE__ */ jsx("div", { className: "rne-toolbar-group", children: group.map(renderItem) })
-      ] }, gi))
+      children: [
+        renderedGroups.map((group, gi) => /* @__PURE__ */ jsxs(Fragment, { children: [
+          gi > 0 && /* @__PURE__ */ jsx("span", { className: "rne-toolbar-separator", "aria-hidden": "true" }),
+          /* @__PURE__ */ jsx("div", { className: "rne-toolbar-group", children: group.map(renderItem) })
+        ] }, gi)),
+        /* @__PURE__ */ jsx(
+          "input",
+          {
+            ref: fileInputRef,
+            type: "file",
+            accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            style: { display: "none" },
+            "aria-hidden": "true",
+            tabIndex: -1,
+            onChange: onImportFile
+          }
+        )
+      ]
     }
   );
 }
@@ -490,10 +538,37 @@ function resolveConfig(props) {
     placeholder: props.placeholder
   };
 }
+var PX_PER_MM = 96 / 25.4;
+var PAGE_GAP_PX = 24;
+function computePaginationGeometry(page) {
+  if (page.pagination !== "visual") return null;
+  const { width, height } = resolvePageDimensions(page);
+  const m = page.margins;
+  const pageWidthPx = width * PX_PER_MM;
+  const pageHeightPx = height * PX_PER_MM;
+  const marginTopPx = m.top * PX_PER_MM;
+  const marginBottomPx = m.bottom * PX_PER_MM;
+  const marginLeftPx = m.left * PX_PER_MM;
+  const contentWidthPx = Math.max(1, (width - m.left - m.right) * PX_PER_MM);
+  const contentHeightPx = pageHeightPx - marginTopPx - marginBottomPx;
+  if (contentHeightPx <= 0) return null;
+  return {
+    pageWidthPx,
+    pageHeightPx,
+    marginTopPx,
+    marginBottomPx,
+    marginLeftPx,
+    contentWidthPx,
+    contentHeightPx,
+    interPageOffsetPx: marginBottomPx + PAGE_GAP_PX + marginTopPx
+  };
+}
 var EditorInner = forwardRef(function EditorInner2(props, ref) {
   const mountRef = useRef(null);
   const viewRef = useRef(null);
   const persistenceRef = useRef(null);
+  const pageBgRef = useRef(null);
+  const remeasureRef = useRef(null);
   const propsRef = useRef(props);
   propsRef.current = props;
   const config = useMemo(() => resolveConfig(props), [props]);
@@ -523,12 +598,29 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
     },
     []
   );
+  const importDocxIntoEditor = useCallback(
+    async (file) => {
+      const view = viewRef.current;
+      if (!view) return { warnings: [] };
+      const { importDocx: importDocx2 } = await import('./docx-GRUA3IKK.js');
+      const result = await importDocx2(file, view.state.schema);
+      const node = Node.fromJSON(view.state.schema, result.doc);
+      const v = viewRef.current;
+      if (v) {
+        const tr = v.state.tr.replaceWith(0, v.state.doc.content.size, node.content);
+        v.dispatch(tr.scrollIntoView());
+      }
+      return { warnings: result.warnings };
+    },
+    []
+  );
   const handle = useMemo(
     () => ({
       getJSON,
       getText: (options) => documentToText(getJSON(), options),
       getHTML: () => documentToHtml(getJSON()),
       setContent,
+      importDocx: importDocxIntoEditor,
       focus: () => viewRef.current?.focus(),
       isDirty: () => persistenceRef.current?.isDirty() ?? false,
       save: async () => {
@@ -546,17 +638,27 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
       getState: () => viewRef.current?.state ?? null,
       getSchema: () => viewRef.current?.state.schema ?? null
     }),
-    [getJSON, setContent]
+    [getJSON, setContent, importDocxIntoEditor]
   );
   useImperativeHandle(ref, () => handle, [handle]);
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
     void preloadSanitizer();
+    const paginated2 = cfgRef.current.page.pagination === "visual";
     const plugins = buildPlugins(engine.schema, {
       placeholder: cfgRef.current.placeholder,
       history: cfgRef.current.features.history,
-      extraPlugins: propsRef.current.extensions?.plugins
+      extraPlugins: propsRef.current.extensions?.plugins,
+      pagination: paginated2 ? {
+        getGeometry: () => computePaginationGeometry(cfgRef.current.page),
+        getBackgroundLayer: () => pageBgRef.current,
+        header: cfgRef.current.page.header,
+        footer: cfgRef.current.page.footer,
+        register: (fn) => {
+          remeasureRef.current = fn;
+        }
+      } : void 0
     });
     const initialContent = propsRef.current.value ?? propsRef.current.initialContent ?? null;
     const state = createEditorState({ schema: engine.schema, plugins, content: initialContent });
@@ -703,21 +805,50 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
       fontSizes: config.fontSizes,
       colorPalette: config.colorPalette,
       editable: config.editable,
-      run: runCommand
+      run: runCommand,
+      importDocx: importDocxIntoEditor
     }),
-    [editorState, engine, config, runCommand]
+    [editorState, engine, config, runCommand, importDocxIntoEditor]
   );
   const { width } = resolvePageDimensions(config.page);
   const showChrome = config.page.showPageChrome;
-  const rootStyle = useMemo(
-    () => ({
+  const paginated = config.page.pagination === "visual";
+  const pageGeometryKey = useMemo(
+    () => JSON.stringify({
+      p: config.page.pagination,
+      s: config.page.size,
+      o: config.page.orientation,
+      w: config.page.widthMm,
+      h: config.page.heightMm,
+      m: config.page.margins,
+      hdr: config.page.header,
+      ftr: config.page.footer
+    }),
+    [config.page]
+  );
+  useEffect(() => {
+    if (paginated) remeasureRef.current?.();
+  }, [pageGeometryKey, paginated]);
+  const geometry = useMemo(
+    () => computePaginationGeometry(config.page),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pageGeometryKey]
+  );
+  const rootStyle = useMemo(() => {
+    const base = {
       ...themeToCssVars(props.theme),
       "--rne-page-width": `${width}mm`,
-      "--rne-page-padding": `${config.page.margins.top}mm ${config.page.margins.right}mm ${config.page.margins.bottom}mm ${config.page.margins.left}mm`,
-      ...props.style
-    }),
-    [props.theme, props.style, width, config.page.margins]
-  );
+      "--rne-page-padding": `${config.page.margins.top}mm ${config.page.margins.right}mm ${config.page.margins.bottom}mm ${config.page.margins.left}mm`
+    };
+    if (geometry) {
+      base["--rne-page-w"] = `${geometry.pageWidthPx}px`;
+      base["--rne-page-h"] = `${geometry.pageHeightPx}px`;
+      base["--rne-content-w"] = `${geometry.contentWidthPx}px`;
+      base["--rne-mt"] = `${geometry.marginTopPx}px`;
+      base["--rne-ml"] = `${geometry.marginLeftPx}px`;
+    }
+    return { ...base, ...props.style };
+  }, [props.theme, props.style, width, config.page.margins, geometry]);
   const toolbarEnabled = props.toolbar !== false && (props.toolbar?.enabled ?? true) && config.editable;
   const statusBarEnabled = props.statusBar ?? true;
   return /* @__PURE__ */ jsx(EditorContext.Provider, { value: contextValue, children: /* @__PURE__ */ jsxs(
@@ -729,7 +860,16 @@ var EditorInner = forwardRef(function EditorInner2(props, ref) {
       dir: props.dir ?? "ltr",
       children: [
         toolbarEnabled && /* @__PURE__ */ jsx(Toolbar, { config: props.toolbar || void 0 }),
-        /* @__PURE__ */ jsx("div", { className: `rne-canvas${showChrome ? "" : " rne-canvas--plain"}`, children: /* @__PURE__ */ jsx("div", { className: "rne-page", children: /* @__PURE__ */ jsx("div", { ref: mountRef, className: "rne-mount" }) }) }),
+        /* @__PURE__ */ jsx(
+          "div",
+          {
+            className: `rne-canvas${showChrome ? "" : " rne-canvas--plain"}${paginated ? " rne-canvas--paged" : ""}`,
+            children: paginated ? /* @__PURE__ */ jsxs("div", { className: "rne-paged", children: [
+              /* @__PURE__ */ jsx("div", { ref: pageBgRef, className: "rne-page-bg", "aria-hidden": "true" }),
+              /* @__PURE__ */ jsx("div", { ref: mountRef, className: "rne-mount rne-mount--paged" })
+            ] }) : /* @__PURE__ */ jsx("div", { className: "rne-page", children: /* @__PURE__ */ jsx("div", { ref: mountRef, className: "rne-mount" }) })
+          }
+        ),
         statusBarEnabled && /* @__PURE__ */ jsx(StatusBar, { saveStatus, hasPersistence: !!props.documentId })
       ]
     }
