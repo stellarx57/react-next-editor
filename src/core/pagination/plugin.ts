@@ -95,7 +95,15 @@ export function paginationPlugin(options: PaginationOptions): Plugin<PaginationP
           return { result: meta.result, decorations: buildDecorations(tr.doc, meta.result) };
         }
         if (tr.docChanged) {
-          return { result: prev.result, decorations: prev.decorations.map(tr.mapping, tr.doc) };
+          // Keep the stored break positions in sync with the mapped decorations
+          // so natural-coordinate measurement stays accurate between re-measures.
+          const result = prev.result
+            ? {
+                ...prev.result,
+                breaks: prev.result.breaks.map((b) => ({ ...b, pos: tr.mapping.map(b.pos) })),
+              }
+            : prev.result;
+          return { result, decorations: prev.decorations.map(tr.mapping, tr.doc) };
         }
         return prev;
       },
