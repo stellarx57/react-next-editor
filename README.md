@@ -1,4 +1,4 @@
-# react-next-editor
+# react-next-editor-js
 
 A comprehensive, performant, secure, configurable, customizable, reusable, and
 pluggable **Word-style rich document editor** for React and Next.js, built
@@ -12,9 +12,9 @@ definitions.
 
 ```tsx
 import dynamic from 'next/dynamic';
-import 'react-next-editor/styles.css';
+import 'react-next-editor-js/styles.css';
 
-const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), {
+const Editor = dynamic(() => import('react-next-editor-js').then((m) => m.Editor), {
   ssr: false,
 });
 
@@ -113,7 +113,7 @@ const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), 
 ## Installation
 
 ```bash
-npm install react-next-editor
+npm install react-next-editor-js
 ```
 
 `react` and `react-dom` (`^18.2` or `^19`) are **peer dependencies**.
@@ -131,7 +131,7 @@ npm install playwright # or: npm install puppeteer
 Import the stylesheet once in your app:
 
 ```ts
-import 'react-next-editor/styles.css';
+import 'react-next-editor-js/styles.css';
 ```
 
 ## Quick start (Next.js App Router)
@@ -144,10 +144,10 @@ server-rendered. Load it with `next/dynamic` and `{ ssr: false }`.
 
 import dynamic from 'next/dynamic';
 import { useRef } from 'react';
-import type { EditorRef, DocumentJSON } from 'react-next-editor';
-import 'react-next-editor/styles.css';
+import type { EditorRef, DocumentJSON } from 'react-next-editor-js';
+import 'react-next-editor-js/styles.css';
 
-const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), {
+const Editor = dynamic(() => import('react-next-editor-js').then((m) => m.Editor), {
   ssr: false,
 });
 
@@ -206,7 +206,7 @@ full offline-first behaviour (queue offline, upload on reconnect) prefer the
 
 ```tsx
 import { useMemo, useRef } from 'react';
-import type { DocumentJSON } from 'react-next-editor';
+import type { DocumentJSON } from 'react-next-editor-js';
 
 function useDebouncedSave(documentId: string, wait = 800) {
   const timer = useRef<ReturnType<typeof setTimeout>>();
@@ -429,7 +429,7 @@ A custom bold button that reflects active state:
 
 ```tsx
 'use client';
-import { useEditorContext } from 'react-next-editor';
+import { useEditorContext } from 'react-next-editor-js';
 
 function BoldButton() {
   const { commands, run, state } = useEditorContext();
@@ -453,7 +453,7 @@ function BoldButton() {
 Compose it into a custom toolbar and hide the built-in one with `toolbar={false}`:
 
 ```tsx
-import { useEditorContext } from 'react-next-editor';
+import { useEditorContext } from 'react-next-editor-js';
 
 function MyToolbar() {
   const { commands, run } = useEditorContext();
@@ -543,7 +543,7 @@ Requires the optional `mammoth` dependency. The lower-level converter is also
 available, and returns conversion `warnings` plus the intermediate `html`:
 
 ```ts
-import { importDocx } from 'react-next-editor/import';
+import { importDocx } from 'react-next-editor-js/import';
 const { doc, warnings, html } = await importDocx(arrayBuffer, schema, {
   // Optional extra mammoth style mappings (merged with the built-in defaults):
   styleMap: ["p[style-name='Legal Heading'] => h2:fresh"],
@@ -593,7 +593,7 @@ import {
   printDocumentToPdf,   // open the print dialog with a print stylesheet
   buildPrintDocument,   // standalone print HTML (shared with the server PDF path)
   downloadBlob, downloadText,
-} from 'react-next-editor/export';
+} from 'react-next-editor-js/export';
 
 await exportDocument(doc, 'docx', { filename: 'report', page });
 await printDocumentToPdf(doc, { page, title: 'Report' });
@@ -604,7 +604,7 @@ The simplest path is `ref.current.exportAs('docx' | 'pdf' | 'txt' | 'html')`.
 
 ### Programmatic export service (server)
 
-`react-next-editor/server` is an **optional, Node-only** service that converts
+`react-next-editor-js/server` is an **optional, Node-only** service that converts
 stored or inline document JSON to DOCX/PDF/text/HTML using the same converters,
 optionally writes results to storage, and enforces access control via an injected
 hook. The editor's offline/client export does not depend on it.
@@ -615,7 +615,7 @@ import {
   createExportHandler,
   FilesystemStorage,
   createPlaywrightPdfRenderer, // optional; requires `playwright` (or use createPuppeteerPdfRenderer)
-} from 'react-next-editor/server';
+} from 'react-next-editor-js/server';
 
 const service = createExportService({
   store: { loadDocument: (id) => db.loadDocJson(id) }, // read stored JSON by id
@@ -635,7 +635,7 @@ Use it directly as a Next.js App Router route handler (it is a standard
 
 ```ts
 // app/api/export/route.ts
-import { createExportService, createExportHandler } from 'react-next-editor/server';
+import { createExportService, createExportHandler } from 'react-next-editor-js/server';
 
 export const runtime = 'nodejs'; // DOCX/PDF need Node
 const handle = createExportHandler(createExportService(/* …adapters… */));
@@ -654,8 +654,8 @@ a `sync.remote` adapter is provided — uploads queued changes automatically whe
 connectivity returns.
 
 ```tsx
-import { ConflictError } from 'react-next-editor';
-import type { RemoteSyncAdapter } from 'react-next-editor';
+import { ConflictError } from 'react-next-editor-js';
+import type { RemoteSyncAdapter } from 'react-next-editor-js';
 
 const remote: RemoteSyncAdapter = {
   async save(record, signal) {
@@ -697,8 +697,8 @@ Adapters are injectable, so the same editor works against any backend. Provide a
 custom local store via `persistence.store` and a remote via `sync.remote`:
 
 ```tsx
-import { IndexedDBStore } from 'react-next-editor/persistence';
-import type { LocalStoreAdapter, StoredDocument } from 'react-next-editor';
+import { IndexedDBStore } from 'react-next-editor-js/persistence';
+import type { LocalStoreAdapter, StoredDocument } from 'react-next-editor-js';
 
 // Example: wrap the built-in store to encrypt documents at rest.
 class EncryptedStore implements LocalStoreAdapter {
@@ -723,7 +723,7 @@ class EncryptedStore implements LocalStoreAdapter {
 ```
 
 `LocalStoreAdapter`, `RemoteSyncAdapter`, and `AssetUploadAdapter` are exported
-from `react-next-editor/persistence` (and the package root). The editor wires
+from `react-next-editor-js/persistence` (and the package root). The editor wires
 `LocalStoreAdapter` (via `persistence.store`) and `RemoteSyncAdapter` (via
 `sync.remote`); `AssetUploadAdapter` is provided as an interface for building your
 own image/asset upload pipeline. Auth tokens are supplied through your adapter and
@@ -749,7 +749,7 @@ Register custom ProseMirror plugins and matching DOCX mappings without forking:
 ```
 
 For deeper control, the framework-agnostic core is exported from
-`react-next-editor/core` (`buildSchema`, `createCommands`, `buildPlugins`,
+`react-next-editor-js/core` (`buildSchema`, `createCommands`, `buildPlugins`,
 `createEditorState`, `countDocument`, …), and `ref.getView()` / `getState()` /
 `getSchema()` provide direct access to the underlying ProseMirror objects.
 
@@ -797,13 +797,13 @@ Import only what you need to keep bundles lean.
 
 | Entry | Contents |
 |-------|----------|
-| `react-next-editor` | React component, hooks, and the full public API (default). |
-| `react-next-editor/core` | Framework-agnostic schema, commands, plugins (incl. pagination), and state factory. |
-| `react-next-editor/export` | Isomorphic DOCX/PDF/text/HTML converters and download helpers. |
-| `react-next-editor/import` | Best-effort `.docx` importer. |
-| `react-next-editor/persistence` | Adapters, IndexedDB/memory stores, autosave, connectivity, sync engine. |
-| `react-next-editor/server` | Node-only programmatic export service and route handler. |
-| `react-next-editor/styles.css` | The stylesheet. |
+| `react-next-editor-js` | React component, hooks, and the full public API (default). |
+| `react-next-editor-js/core` | Framework-agnostic schema, commands, plugins (incl. pagination), and state factory. |
+| `react-next-editor-js/export` | Isomorphic DOCX/PDF/text/HTML converters and download helpers. |
+| `react-next-editor-js/import` | Best-effort `.docx` importer. |
+| `react-next-editor-js/persistence` | Adapters, IndexedDB/memory stores, autosave, connectivity, sync engine. |
+| `react-next-editor-js/server` | Node-only programmatic export service and route handler. |
+| `react-next-editor-js/styles.css` | The stylesheet. |
 
 ## SSR & browser support
 
@@ -824,7 +824,7 @@ import type {
   EditorProps, EditorRef, DocumentJSON, FeatureFlags, PageConfig,
   ThemeTokens, ToolbarConfig, EditorStrings, SaveStatus,
   PersistenceConfig, SyncConfig, RemoteSyncAdapter, LocalStoreAdapter,
-} from 'react-next-editor';
+} from 'react-next-editor-js';
 ```
 
 ## Architecture
