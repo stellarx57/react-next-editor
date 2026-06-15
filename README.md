@@ -19,8 +19,12 @@ dependency.
 - **Structure** — H1–H6, alignment, indentation, line spacing, bullet/numbered/
   task lists, blockquotes, horizontal rules, tables (insert/merge/split, cell
   styling), images, links, manual page breaks.
-- **Word-like page surface** — A4/Letter/Legal/A5/custom, configurable margins,
-  single-flow page model (print/PDF paginate naturally).
+- **Word-like page surface** — A4/Letter/Legal/A5/custom, configurable margins.
+  Single-flow by default, or **true visual pagination**: content split across
+  discrete on-screen page sheets with repeating headers/footers and live page
+  numbers.
+- **DOCX import** — best-effort import of external `.docx` files (via `mammoth`),
+  sanitized into the schema.
 - **Offline-first** — durable IndexedDB persistence, debounced autosave,
   crash/reload recovery, a durable outbox, connectivity detection and a sync
   engine with exponential backoff and a version-guard conflict path.
@@ -43,8 +47,9 @@ dependency.
 npm install react-next-editor
 ```
 
-`react` and `react-dom` (18.2+ or 19) are peer dependencies. `docx` is an
-optional dependency, lazily imported only when you export to DOCX.
+`react` and `react-dom` (18.2+ or 19) are peer dependencies. `docx` (DOCX export)
+and `mammoth` (DOCX import) are optional dependencies, lazily imported only when
+those paths are used.
 
 ## Quick start (Next.js App Router)
 
@@ -95,8 +100,45 @@ export default function MyEditor() {
 | `onReady` / `onSelectionChange` / `onSaveStatusChange` / `onError` | events | Lifecycle hooks. |
 
 A `ref` exposes an imperative handle: `getJSON()`, `getText()`, `getHTML()`,
-`setContent()`, `focus()`, `isDirty()`, `save()`, `clearLocalData()`,
-`exportAs()`, and escape hatches `getView()` / `getState()` / `getSchema()`.
+`setContent()`, `importDocx()`, `focus()`, `isDirty()`, `save()`,
+`clearLocalData()`, `exportAs()`, and escape hatches `getView()` / `getState()` /
+`getSchema()`.
+
+## Visual pagination
+
+By default the editor uses a document-styled single flow (cheap, robust; print
+and PDF paginate naturally). Opt into **true visual pagination** to split content
+across discrete on-screen page sheets with repeating headers/footers and live
+page numbers:
+
+```tsx
+<Editor
+  page={{
+    size: 'A4',
+    pagination: 'visual',
+    header: { show: true, text: 'Case No. {page}' },
+    footer: { pageNumbers: true }, // "Page X of Y", or supply `text` with {page}/{pages}
+  }}
+/>
+```
+
+Pagination is **purely visual** — it measures block heights and inserts spacer
+decorations + a page-sheet background layer; it never mutates the document, so
+content integrity is guaranteed even if measurement is imperfect. Breaks occur at
+block boundaries (a block taller than a page overflows rather than being split).
+It re-measures on edits, resize, and image load.
+
+## DOCX import
+
+```tsx
+// via the toolbar button (enabled by the `docxImport` feature), or imperatively:
+const { warnings } = await editorRef.current.importDocx(file); // File | ArrayBuffer | Uint8Array
+```
+
+Best-effort: `mammoth` converts the `.docx` to HTML, which is sanitized and parsed
+into the schema. `mammoth` is an optional dependency — install it where you use
+import. Supported structures (headings, lists, tables, bold/italic/underline,
+links, images) map across; unsupported Word constructs degrade gracefully.
 
 ## Theming
 
