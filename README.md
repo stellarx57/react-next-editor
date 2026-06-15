@@ -1,45 +1,112 @@
 # react-next-editor
 
-A comprehensive, performant, secure, configurable, customizable, reusable and
-pluggable **Word-style rich document editor** for React / Next.js, built directly
-on [ProseMirror](https://prosemirror.net). It edits structured documents,
-persists locally for offline-first use, synchronizes to your REST API, and
-exports to **DOCX, PDF and plain text** — with no external document-rendering
-server.
+A comprehensive, performant, secure, configurable, customizable, reusable, and
+pluggable **Word-style rich document editor** for React and Next.js, built
+directly on [ProseMirror](https://prosemirror.net).
 
-Built entirely in TypeScript. Ships ESM + CJS + types. React is a peer
-dependency.
+It provides a familiar word-processor authoring experience, works fully offline,
+synchronizes to your own REST API, and produces shareable **DOCX, PDF, and plain
+text** — all without any external document-rendering server. It is written
+entirely in TypeScript and ships ESM + CJS builds with complete type
+definitions.
+
+```tsx
+import dynamic from 'next/dynamic';
+import 'react-next-editor/styles.css';
+
+const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), {
+  ssr: false,
+});
+
+<Editor documentId="judgement-123" placeholder="Start typing…" />;
+```
 
 ---
 
-## Features
+## Table of contents
 
-- **Rich editing** — bold/italic/underline/strike, super/subscript, inline code,
-  font family/size, text & highlight colors, clear formatting.
-- **Structure** — H1–H6, alignment, indentation, line spacing, bullet/numbered/
-  task lists, blockquotes, horizontal rules, tables (insert/merge/split, cell
-  styling), images, links, manual page breaks.
-- **Word-like page surface** — A4/Letter/Legal/A5/custom, configurable margins.
-  Single-flow by default, or **true visual pagination**: content split across
-  discrete on-screen page sheets with repeating headers/footers and live page
-  numbers.
-- **DOCX import** — best-effort import of external `.docx` files (via `mammoth`),
-  sanitized into the schema.
+- [Highlights](#highlights)
+- [Design principles](#design-principles)
+- [Installation](#installation)
+- [Quick start (Next.js App Router)](#quick-start-nextjs-app-router)
+- [Usage patterns](#usage-patterns)
+- [Configuration](#configuration)
+  - [Props reference](#props-reference)
+  - [Feature flags](#feature-flags)
+  - [Page configuration](#page-configuration)
+  - [Toolbar](#toolbar)
+  - [Theming](#theming)
+  - [Localization](#localization)
+- [Imperative API (ref)](#imperative-api-ref)
+- [Events](#events)
+- [Visual pagination](#visual-pagination)
+- [DOCX import](#docx-import)
+- [Export](#export)
+  - [Client-side export](#client-side-export)
+  - [Programmatic export service (server)](#programmatic-export-service-server)
+- [Offline-first persistence & sync](#offline-first-persistence--sync)
+- [Extensibility](#extensibility)
+- [Security](#security)
+- [Accessibility & internationalization](#accessibility--internationalization)
+- [Subpath entry points](#subpath-entry-points)
+- [SSR & browser support](#ssr--browser-support)
+- [TypeScript](#typescript)
+- [Architecture](#architecture)
+- [Limitations & non-goals](#limitations--non-goals)
+- [Development](#development)
+- [License](#license)
+
+---
+
+## Highlights
+
+- **Rich text** — bold, italic, underline, strikethrough, superscript,
+  subscript, inline code, font family, font size, text color, highlight, and
+  clear-formatting.
+- **Block & structural** — headings (H1–H6), text alignment, indentation, line
+  spacing, bulleted / numbered / **task** lists, blockquotes, horizontal rules,
+  **tables** (insert, add/remove rows & columns, merge/split cells, cell
+  background & alignment, column resizing), images (URL / paste / data-URI,
+  resize), hyperlinks, and manual page breaks.
+- **Word-like page surface** — A4 / Letter / Legal / A5 / custom sizes,
+  configurable margins and orientation. Document-styled single flow by default,
+  or **true visual pagination** with discrete on-screen page sheets, repeating
+  headers/footers, and live page numbers.
 - **Offline-first** — durable IndexedDB persistence, debounced autosave,
-  crash/reload recovery, a durable outbox, connectivity detection and a sync
-  engine with exponential backoff and a version-guard conflict path.
-- **Export** — isomorphic converters (browser **and** Node) to DOCX (`docx`),
-  PDF (print stylesheet / headless browser) and plain text, so client and server
-  output match.
-- **Configurable & extensible** — one props object, per-feature toggles,
-  data-driven customizable toolbar, CSS-variable theming, injectable strings,
-  custom plugins and custom DOCX node mappings, injectable persistence/sync/asset
-  adapters.
-- **Robust & secure** — schema-enforced validity, sanitized paste/URL/image
-  ingress (no active content), an error boundary that contains failures, and a
-  release dependency tree with no known vulnerabilities.
-- **Accessible & responsive** — keyboard-navigable, ARIA-labeled toolbar; fully
-  responsive from mobile to desktop.
+  crash/reload recovery, a durable outbox, connectivity detection (real
+  reachability, not just `navigator.onLine`), and a sync engine with exponential
+  backoff and a version-guard conflict path. Offline edits upload automatically
+  on reconnect.
+- **Export** — isomorphic converters that run **identically in the browser and
+  Node**: DOCX (via `docx`), PDF (browser print or a headless-browser renderer),
+  plain text, and HTML. An optional server export service renders stored JSON to
+  files and writes them to storage.
+- **Import** — best-effort `.docx` import (via `mammoth`), sanitized and parsed
+  into the schema.
+- **Configurable & extensible** — a single documented props object, per-feature
+  toggles, a data-driven customizable toolbar, CSS-variable theming, injectable
+  localized strings, custom ProseMirror plugins, custom DOCX node mappings, and
+  injectable persistence / sync / asset adapters.
+- **Robust & secure** — schema-enforced document validity, sanitized
+  paste/URL/image ingress with no active content, render-time CSS sanitization,
+  a React error boundary that contains failures, and a release dependency tree
+  with no known vulnerabilities.
+- **Accessible & responsive** — keyboard-navigable, ARIA-labeled toolbar with
+  arrow-key navigation; RTL aware; fully responsive from mobile to desktop.
+
+## Design principles
+
+- **ProseMirror owns the DOM.** The React layer mounts and disposes the
+  `EditorView` but never re-renders the editing surface, which avoids the most
+  common class of integration bugs.
+- **Core vs. adapters.** The editing core is backend-agnostic. Persistence,
+  sync, and asset upload are injected as adapter interfaces, so the same editor
+  works against any backend.
+- **Offline-first.** The local store is the source of truth during editing; the
+  network is best-effort and never in the critical path.
+- **One schema, shared serializers.** The document schema underpins the editor,
+  persistence, and every exporter, so on-screen, downloaded, and API-rendered
+  output stay consistent.
 
 ## Installation
 
@@ -47,179 +114,438 @@ dependency.
 npm install react-next-editor
 ```
 
-`react` and `react-dom` (18.2+ or 19) are peer dependencies. `docx` (DOCX export)
-and `mammoth` (DOCX import) are optional dependencies, lazily imported only when
-those paths are used.
+`react` and `react-dom` (`^18.2` or `^19`) are **peer dependencies**.
+
+Two optional dependencies are lazily imported only when their feature is used —
+install them where you need them:
+
+```bash
+npm install docx       # DOCX export (client + server)
+npm install mammoth    # DOCX import
+# Server PDF rendering (optional): one of
+npm install playwright # or: npm install puppeteer
+```
+
+Import the stylesheet once in your app:
+
+```ts
+import 'react-next-editor/styles.css';
+```
 
 ## Quick start (Next.js App Router)
 
-The editor is **client-only** (it needs the DOM). Load it with `next/dynamic`
-and `{ ssr: false }`, and import the stylesheet once.
+The editor is **client-only** — it requires the DOM and must not be
+server-rendered. Load it with `next/dynamic` and `{ ssr: false }`.
 
 ```tsx
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useRef } from 'react';
+import type { EditorRef, DocumentJSON } from 'react-next-editor';
 import 'react-next-editor/styles.css';
 
-const Editor = dynamic(
-  () => import('react-next-editor').then((m) => m.Editor),
-  { ssr: false },
-);
+const Editor = dynamic(() => import('react-next-editor').then((m) => m.Editor), {
+  ssr: false,
+});
 
 export default function MyEditor() {
+  const ref = useRef<EditorRef>(null);
+
   return (
-    <div style={{ height: 600 }}>
+    <div style={{ height: '80vh' }}>
       <Editor
+        ref={ref}
         documentId="judgement-123"
         placeholder="Start typing…"
-        onChange={(json) => console.log(json)}
+        onChange={(json: DocumentJSON) => {
+          /* persist / lift state */
+        }}
       />
     </div>
   );
 }
 ```
 
-## Configuration (selected props)
+Give the editor a sized container (e.g. a fixed height or a flex parent): it
+fills its parent and scrolls its own canvas.
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `documentId` | `string` | Stable id for local persistence/sync. |
-| `initialContent` | `DocumentJSON \| string \| null` | Uncontrolled initial content. |
-| `value` / `onChange` | controlled | Controlled usage (ProseMirror JSON). |
-| `mode` / `readOnly` | `'edit' \| 'readonly'` / `boolean` | Editing mode. |
-| `features` | `Partial<FeatureFlags>` | Per-feature toggles. |
-| `page` | `Partial<PageConfig>` | Size, orientation, margins, page chrome. |
-| `toolbar` | `ToolbarConfig \| false` | Reorder/add/remove items, or hide. |
-| `theme` | `ThemeTokens` | CSS-variable design tokens. |
-| `strings` | `Partial<EditorStrings>` | Localized UI strings. |
-| `persistence` | `PersistenceConfig` | Local store, autosave, adapter. |
-| `sync` | `SyncConfig` | REST adapter; offline edits auto-upload on reconnect. |
-| `dir` | `'ltr' \| 'rtl' \| 'auto'` | Text direction (RTL aware). |
-| `extensions` | `EditorExtensions` | Custom PM plugins, custom DOCX mappings. |
-| `onReady` / `onSelectionChange` / `onSaveStatusChange` / `onError` | events | Lifecycle hooks. |
+## Usage patterns
 
-A `ref` exposes an imperative handle: `getJSON()`, `getText()`, `getHTML()`,
-`setContent()`, `importDocx()`, `focus()`, `isDirty()`, `save()`,
-`clearLocalData()`, `exportAs()`, and escape hatches `getView()` / `getState()` /
-`getSchema()`.
+**Uncontrolled (recommended).** Provide `initialContent`; read changes via
+`onChange` or the `ref`.
+
+```tsx
+<Editor initialContent={docJson} onChange={(json) => save(json)} />
+```
+
+**Controlled.** Provide `value` (ProseMirror JSON) together with `onChange`. The
+editor reconciles external value changes without disturbing the cursor when the
+content is unchanged.
+
+```tsx
+<Editor value={value} onChange={(json) => setValue(json)} />
+```
+
+**Read-only / view mode.**
+
+```tsx
+<Editor initialContent={docJson} readOnly /> // or mode="readonly"
+```
+
+**Plain-text or empty start.** `initialContent` also accepts a plain string
+(split into paragraphs) or `null` (empty document).
+
+## Configuration
+
+Everything is driven by a single props object. Every field is optional; sensible
+defaults apply.
+
+### Props reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `documentId` | `string` | — | Stable id used for local persistence and sync. |
+| `initialContent` | `DocumentJSON \| string \| null` | empty | Initial content for uncontrolled usage. |
+| `value` | `DocumentJSON \| null` | — | Controlled value (use with `onChange`). |
+| `mode` | `'edit' \| 'readonly'` | `'edit'` | Editing mode. |
+| `readOnly` | `boolean` | `false` | Convenience alias for read-only. |
+| `placeholder` | `string` | — | Placeholder for an empty document. |
+| `features` | `Partial<FeatureFlags>` | all on | Per-feature toggles. |
+| `page` | `Partial<PageConfig>` | A4 | Size, orientation, margins, chrome, pagination, header/footer. |
+| `toolbar` | `ToolbarConfig \| false` | default | Toolbar layout, or `false` to hide. |
+| `statusBar` | `boolean` | `true` | Show the word/character + sync status bar. |
+| `theme` | `ThemeTokens` | — | Design tokens (CSS variables). |
+| `strings` | `Partial<EditorStrings>` | English | Localized UI strings. |
+| `fontFamilies` | `string[]` | built-in | Font picker options. |
+| `fontSizes` | `number[]` (pt) | built-in | Size picker options. |
+| `colorPalette` | `string[]` | built-in | Color/highlight palette. |
+| `extensions` | `EditorExtensions` | — | Custom plugins and custom DOCX mappings. |
+| `persistence` | `PersistenceConfig` | auto | Local store, autosave, store adapter. |
+| `sync` | `SyncConfig` | — | REST adapter; auto-upload on reconnect. |
+| `metadata` | `Record<string, unknown>` | — | Per-document metadata stored alongside content. |
+| `dir` | `'ltr' \| 'rtl' \| 'auto'` | `'ltr'` | Text direction (RTL aware). |
+| `ariaLabel` | `string` | `'Document editor'` | Accessible label for the editing region. |
+| `className` | `string` | — | Class added to the root element. |
+| `style` | `React.CSSProperties` | — | Inline style on the root element. |
+| `onReady` | `(ref: EditorRef) => void` | — | Fired once the editor is mounted. |
+| `onChange` | `(json: DocumentJSON, ref: EditorRef) => void` | — | Fired on every document change. |
+| `onSelectionChange` | `(state: EditorState) => void` | — | Fired on selection change. |
+| `onSaveStatusChange` | `(status: SaveStatus, detail?) => void` | — | Fired on save/sync transitions. |
+| `onError` | `(error: Error) => void` | — | Fired when the error boundary contains a failure. |
+
+### Feature flags
+
+Every feature can be toggled. Disabling one removes its schema node/mark,
+commands, input rules, and toolbar item together.
+
+```tsx
+<Editor features={{ table: false, image: false, taskList: false }} />
+```
+
+Available flags: `bold`, `italic`, `underline`, `strikethrough`, `superscript`,
+`subscript`, `code`, `fontFamily`, `fontSize`, `textColor`, `highlight`,
+`clearFormatting`, `headings`, `alignment`, `lineSpacing`, `indentation`,
+`bulletList`, `orderedList`, `taskList`, `blockquote`, `horizontalRule`,
+`table`, `image`, `link`, `pageBreak`, `history`, `wordCount`, `docxImport`.
+
+### Page configuration
+
+```ts
+interface PageConfig {
+  size: 'A4' | 'Letter' | 'Legal' | 'A5' | 'custom';
+  widthMm?: number;       // when size === 'custom'
+  heightMm?: number;      // when size === 'custom'
+  orientation: 'portrait' | 'landscape';
+  margins: { top: number; right: number; bottom: number; left: number }; // mm
+  showPageChrome: boolean;          // white sheet on a canvas (single-flow)
+  pagination?: 'none' | 'visual';   // see "Visual pagination"
+  header?: PageRunningElement;       // visual pagination only
+  footer?: PageFooterElement;        // visual pagination only
+}
+```
+
+```tsx
+<Editor page={{ size: 'Letter', orientation: 'portrait', margins: { top: 25.4, right: 25.4, bottom: 25.4, left: 25.4 } }} />
+```
+
+### Toolbar
+
+The toolbar is data-driven. Reorder, add, remove, or replace groups of items,
+or hide it entirely.
+
+```tsx
+<Editor
+  toolbar={{
+    sticky: true,
+    groups: [
+      ['undo', 'redo'],
+      ['paragraphStyle', 'fontFamily', 'fontSize'],
+      ['bold', 'italic', 'underline', 'textColor', 'highlight'],
+      ['bulletList', 'orderedList', 'link', 'image', 'table'],
+    ],
+  }}
+/>
+```
+
+Pass `toolbar={false}` to render no toolbar and drive the editor through the
+`ref` and your own UI. Item ids are exported as `ToolbarItemId`; the default
+layout is `DEFAULT_TOOLBAR_GROUPS`. Items whose feature is disabled are filtered
+out automatically.
+
+### Theming
+
+Every visual aspect is a CSS custom property scoped under `.rne-root`. Override
+any `--rne-*` token in your stylesheet, or pass the `theme` prop — no forking.
+
+```css
+.rne-root {
+  --rne-accent: #df4a36;
+  --rne-page-background: #ffffff;
+  --rne-canvas-background: #f3f4f6;
+  --rne-toolbar-background: #ffffff;
+  --rne-border-radius: 6px;
+}
+```
+
+```tsx
+<Editor theme={{ accent: '#0b5cad', pageBackground: '#fff' }} />
+```
+
+Common tokens: `fontFamily`, `fontSize`, `textColor`, `background`,
+`canvasBackground`, `pageBackground`, `accent`, `toolbarBackground`,
+`toolbarColor`, `toolbarActiveBackground`, `borderColor`, `borderRadius`,
+`selectionColor`.
+
+### Localization
+
+All UI strings are externalized and overridable (`EditorStrings`). The default
+set is English.
+
+```tsx
+<Editor strings={{ bold: 'Gras', italic: 'Italique', link: 'Lien' }} />
+```
+
+## Imperative API (ref)
+
+A `ref` of type `EditorRef` exposes an imperative handle.
+
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `getJSON()` | `DocumentJSON` | Current document as ProseMirror JSON. |
+| `getText(options?)` | `string` | Document as plain text. |
+| `getHTML()` | `string` | Document as an HTML fragment. |
+| `setContent(content)` | `void` | Replace content (`DocumentJSON \| string \| null`). |
+| `importDocx(file)` | `Promise<{ warnings }>` | Import a `.docx`, replacing content (undoable). |
+| `focus()` | `void` | Focus the editing surface. |
+| `isDirty()` | `boolean` | Whether there are unsynced local changes. |
+| `save()` | `Promise<void>` | Force an immediate local save. |
+| `clearLocalData()` | `Promise<void>` | Purge this document's local data. |
+| `exportAs(format, filename?)` | `Promise<void>` | Download/print (`'docx' \| 'pdf' \| 'txt' \| 'html'`). |
+| `getView()` | `EditorView \| null` | Escape hatch: the ProseMirror view. |
+| `getState()` | `EditorState \| null` | Escape hatch: the editor state. |
+| `getSchema()` | `Schema \| null` | The active schema. |
+
+```tsx
+const ref = useRef<EditorRef>(null);
+// …
+await ref.current?.exportAs('docx', 'judgement-123');
+const text = ref.current?.getText();
+```
+
+## Events
+
+```tsx
+<Editor
+  onReady={(ref) => console.log('ready')}
+  onChange={(json, ref) => persist(json)}
+  onSelectionChange={(state) => updateInspector(state)}
+  onSaveStatusChange={(status, detail) => setBadge(status)} // 'savingLocal' | 'savedLocal' | 'syncing' | 'synced' | 'syncFailed' | 'offline' | 'idle'
+  onError={(error) => report(error)}
+/>
+```
 
 ## Visual pagination
 
-By default the editor uses a document-styled single flow (cheap, robust; print
-and PDF paginate naturally). Opt into **true visual pagination** to split content
-across discrete on-screen page sheets with repeating headers/footers and live
-page numbers:
+By default the editor renders a single document-styled flow (cheap and robust;
+print and PDF paginate naturally). Opt into **true visual pagination** to split
+content across discrete on-screen page sheets with repeating headers/footers and
+live page numbers:
 
 ```tsx
 <Editor
   page={{
     size: 'A4',
     pagination: 'visual',
-    header: { show: true, text: 'Case No. {page}' },
-    footer: { pageNumbers: true }, // "Page X of Y", or supply `text` with {page}/{pages}
+    header: { show: true, text: 'Case No. 123', align: 'left' },
+    footer: { pageNumbers: true }, // "Page X of Y"
+    // or a custom footer: footer: { show: true, text: '{page} / {pages}', align: 'center' }
   }}
 />
 ```
 
-Pagination is **purely visual** — it measures block heights and inserts spacer
-decorations + a page-sheet background layer; it never mutates the document, so
-content integrity is guaranteed even if measurement is imperfect. Breaks occur at
-block boundaries (a block taller than a page overflows rather than being split).
-It re-measures on edits, resize, and image load.
+`{page}` and `{pages}` in header/footer text are replaced with the live page
+number and total. Pagination is **purely visual**: it measures block heights and
+inserts spacer decorations plus a page-sheet background layer — it **never
+mutates the document**, so content integrity is guaranteed even if measurement is
+imperfect. It re-measures on edits, resize, and image load.
+
+> Breaks occur at block boundaries; a single block taller than a page overflows
+> rather than being split (there is no line-level layout engine). Set
+> `pagination` at mount time.
 
 ## DOCX import
 
+Best-effort import of external `.docx` files (`mammoth` converts to HTML, which
+is sanitized and parsed into the schema). Available as a toolbar button (enabled
+by the `docxImport` feature) and imperatively:
+
 ```tsx
-// via the toolbar button (enabled by the `docxImport` feature), or imperatively:
-const { warnings } = await editorRef.current.importDocx(file); // File | ArrayBuffer | Uint8Array
+const input = e.target as HTMLInputElement;
+const file = input.files?.[0];
+if (file) {
+  const { warnings } = await ref.current!.importDocx(file); // File | ArrayBuffer | Uint8Array
+}
 ```
 
-Best-effort: `mammoth` converts the `.docx` to HTML, which is sanitized and parsed
-into the schema. `mammoth` is an optional dependency — install it where you use
-import. Supported structures (headings, lists, tables, bold/italic/underline,
-links, images) map across; unsupported Word constructs degrade gracefully.
+Supported structures (headings, lists, tables, bold/italic/underline, links,
+images) map across; unsupported Word constructs degrade gracefully. Requires the
+optional `mammoth` dependency. The lower-level converter is also available:
 
-## Theming
-
-Every visual aspect is a CSS variable under `.rne-root`; override any `--rne-*`
-token (or pass `theme`) — no forking required.
-
-```css
-.rne-root { --rne-accent: #df4a36; --rne-page-background: #fff; }
+```ts
+import { importDocx } from 'react-next-editor/import';
+const { doc, warnings, html } = await importDocx(arrayBuffer, schema);
 ```
 
 ## Export
 
+All converters are isomorphic and share one implementation, so browser download,
+client print, and server rendering produce consistent output.
+
+### Client-side export
+
 ```ts
 import {
-  documentToText,
-  documentToDocxBlob,
-  documentToDocxBuffer, // Node
-  printDocumentToPdf,   // client print-to-PDF
-  buildPrintDocument,   // shared HTML for server PDF
-  exportDocument,       // high-level: download / print
+  exportDocument,       // high-level: download (docx/txt/html) or print (pdf)
+  documentToText,       // DocumentJSON -> string
+  documentToHtml,       // DocumentJSON -> HTML fragment
+  documentToDocxBlob,   // DocumentJSON -> Blob (browser)
+  printDocumentToPdf,   // open the print dialog with a print stylesheet
+  buildPrintDocument,   // standalone print HTML (shared with the server PDF path)
+  downloadBlob, downloadText,
 } from 'react-next-editor/export';
+
+await exportDocument(doc, 'docx', { filename: 'judgement', page });
+await printDocumentToPdf(doc, { page, title: 'Judgement' });
+const txt = documentToText(doc, { includeLinkUrls: true });
 ```
 
-The same converters run in the browser and in Node, so an optional server export
-API produces output consistent with the client.
+The simplest path is `ref.current.exportAs('docx' | 'pdf' | 'txt' | 'html')`.
 
-### Programmatic export service (server, optional)
+### Programmatic export service (server)
 
-`react-next-editor/server` is a Node-only, additive export service. It reads
-stored or inline document JSON, renders DOCX/PDF/text/HTML with the **same**
-converters, optionally writes the result to storage, and is authenticated via an
-injected hook. It does not change the offline/client guarantees — editing works
-with it absent.
+`react-next-editor/server` is an **optional, Node-only** service that converts
+stored or inline document JSON to DOCX/PDF/text/HTML using the same converters,
+optionally writes results to storage, and enforces access control via an injected
+hook. The editor's offline/client export does not depend on it.
 
 ```ts
 import {
   createExportService,
   createExportHandler,
   FilesystemStorage,
-  createPlaywrightPdfRenderer, // optional; requires `playwright`
+  createPlaywrightPdfRenderer, // optional; requires `playwright` (or use createPuppeteerPdfRenderer)
 } from 'react-next-editor/server';
 
 const service = createExportService({
-  store: { loadDocument: (id) => db.loadDocJson(id) }, // F-6.9
-  storage: new FilesystemStorage({ baseDir: '/var/exports', baseUrl: '/exports' }), // F-6.10
-  pdfRenderer: createPlaywrightPdfRenderer(), // F-6.14 (server PDF)
-  authorize: (req, ctx) => canAccess(ctx.token, req.documentId), // F-6.15
+  store: { loadDocument: (id) => db.loadDocJson(id) }, // read stored JSON by id
+  storage: new FilesystemStorage({ baseDir: '/var/exports', baseUrl: '/exports' }),
+  pdfRenderer: createPlaywrightPdfRenderer(), // server PDF
+  authorize: (req, ctx) => canAccess(ctx.token, req.documentId),
+  nodeConverters: { /* custom node -> DOCX mappings, matching the client */ },
 });
 
-// Single, batch, or async job:
-const result = await service.export({ documentId: 'doc-1', format: 'docx', store: true });
-const results = await service.exportBatch([...]);            // F-6.12, per-doc status
-const { jobId } = service.enqueue([...]);                    // F-6.13 async
+const single = await service.export({ documentId: 'doc-1', format: 'docx', store: true });
+const batch  = await service.exportBatch([{ documentId: 'a', format: 'pdf' }, /* … */]);
+const { jobId } = service.enqueue([/* … */]); // async; poll service.getJob(jobId)
 ```
 
-Use it directly as a **Next.js App Router** route handler:
+Use it directly as a Next.js App Router route handler (it is a standard
+`(Request) => Promise<Response>`):
 
 ```ts
 // app/api/export/route.ts
 import { createExportService, createExportHandler } from 'react-next-editor/server';
-export const runtime = 'nodejs';
+
+export const runtime = 'nodejs'; // DOCX/PDF need Node
 const handle = createExportHandler(createExportService(/* …adapters… */));
 export const POST = handle;
 ```
 
-## Subpath entry points (tree-shaking)
+Errors are reported as `status: 'error'` per document — the service never emits a
+malformed file silently. Storage and PDF rendering are pluggable
+(`StorageAdapter`, `PdfRenderer`); a `MemoryStorage` is provided for tests.
 
-- `react-next-editor` — React component + everything (default).
-- `react-next-editor/core` — framework-agnostic schema/commands/plugins/state.
-- `react-next-editor/export` — isomorphic DOCX/PDF/text converters.
-- `react-next-editor/persistence` — adapters, IndexedDB store, sync engine.
-- `react-next-editor/styles.css` — the stylesheet.
+## Offline-first persistence & sync
+
+When given a `documentId`, the editor autosaves to a durable local store
+(IndexedDB by default), recovers the latest state after a crash/reload, and — if
+a `sync.remote` adapter is provided — uploads queued changes automatically when
+connectivity returns.
+
+```tsx
+import { ConflictError } from 'react-next-editor';
+import type { RemoteSyncAdapter } from 'react-next-editor';
+
+const remote: RemoteSyncAdapter = {
+  async save(record, signal) {
+    const res = await fetch(`/api/docs/${record.id}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ doc: record.doc, baseVersion: record.baseVersion }),
+      signal,
+    });
+    if (res.status === 409) throw new ConflictError('stale', await res.json());
+    return { version: (await res.json()).version };
+  },
+  ping: async () => (await fetch('/api/health')).ok,
+};
+
+<Editor
+  documentId="judgement-123"
+  persistence={{ enabled: true }}          // IndexedDB autosave (default when documentId is set)
+  sync={{ remote, onConflict: (local, remote) => promptUser(local, remote) }}
+/>;
+```
+
+How it works:
+
+- **Local persistence** (`PersistenceConfig`) — debounced autosave of
+  `doc.toJSON()` to a `LocalStoreAdapter`; the default is `IndexedDBStore` (with
+  an in-memory fallback). Configure `store`, `debounceMs`, `requestPersistent`.
+- **Outbox** — every local save is recorded in a durable outbox that survives
+  reloads and restarts.
+- **Connectivity** (`ConnectivityMonitor`) — listens to `online`/`offline` and,
+  when a `ping` is provided, confirms real API reachability rather than trusting
+  `navigator.onLine`.
+- **Sync engine** (`SyncEngine`) — on reconnect and after each local save, flushes
+  the outbox with idempotent uploads and exponential backoff. On a version
+  conflict (throw `ConflictError`), the document is parked and `onConflict` fires;
+  edits are never silently lost.
+
+Adapters are injectable, so the same editor works against any backend:
+`LocalStoreAdapter`, `RemoteSyncAdapter`, and `AssetUploadAdapter` are all
+exported from `react-next-editor/persistence`. Tokens are supplied through your
+adapter and are never embedded in the editor; all network access must use HTTPS.
 
 ## Extensibility
 
-Register custom ProseMirror plugins and a matching DOCX mapping without forking:
+Register custom ProseMirror plugins and matching DOCX mappings without forking:
 
 ```tsx
 <Editor
   extensions={{
-    plugins: [myPlugin],
+    plugins: [myPlugin], // any prosemirror-state Plugin[]
     docxNodeConverters: {
       signature: (node, ctx) => [
         new ctx.docx.Paragraph({
@@ -231,39 +557,117 @@ Register custom ProseMirror plugins and a matching DOCX mapping without forking:
 />
 ```
 
-## Adapters (persistence / sync / assets)
-
-The editor core depends only on interfaces; inject your own implementations.
-
-```ts
-import { IndexedDBStore, SyncEngine, ConnectivityMonitor } from 'react-next-editor/persistence';
-```
-
-`LocalStoreAdapter`, `RemoteSyncAdapter` and `AssetUploadAdapter` let the same
-editor work against any backend/storage. The remote adapter uses your app's auth
-(tokens are never embedded in the editor) and must use HTTPS.
+For deeper control, the framework-agnostic core is exported from
+`react-next-editor/core` (`buildSchema`, `createCommands`, `buildPlugins`,
+`createEditorState`, `countDocument`, …), and `ref.getView()` / `getState()` /
+`getSchema()` provide direct access to the underlying ProseMirror objects.
 
 ## Security
 
-All pasted/loaded content is sanitized; URLs and image sources are validated;
-SVG/`data:` script vectors and active content are rejected; inline `style`
-values from document JSON are re-validated at render time so a crafted attribute
-(e.g. `align: "left;background:url(...)"`) cannot inject CSS; oversized data URIs
-are rejected; and the editor never executes embedded scripts. Integrators remain
-responsible for backend auth, transport (HTTPS), and storage policy. See
-`sanitizeUrl`, `sanitizeImageSrc`, `sanitizeHtml`.
+The editor follows a defense-in-depth posture:
 
-**Content Security Policy.** The editor applies formatting (alignment, color,
-font, highlight) via inline `style` *attributes*, so it requires
-`style-src 'unsafe-inline'` (or `style-src-attr 'unsafe-inline'`). It does not
-use inline `<script>` or `eval`, so `script-src` can be strict (nonce/hash
-based). At-rest encryption of the local IndexedDB store is not built in; for
-sensitive deployments, wrap the injected `LocalStoreAdapter` to encrypt values.
+- All pasted, imported, or loaded content is sanitized; `<script>`, inline event
+  handlers, and other active content are stripped.
+- Link and image URLs are validated; `javascript:`/`vbscript:`/`data:text/html`
+  and SVG/script data-URIs are rejected, and oversized data-URIs are capped.
+- Inline `style` values from document JSON are re-validated at render time, so a
+  crafted attribute (e.g. `align: "left;background:url(...)"`) cannot inject CSS.
+- The schema enforces document validity, so the document cannot enter an invalid
+  or unrenderable state.
+- A React error boundary contains failures so a fault in the editor cannot bring
+  down the host app.
 
-## Scripts
+Helpers `sanitizeUrl`, `sanitizeImageSrc`, and `sanitizeHtml` are exported for
+reuse.
+
+**Content Security Policy.** Formatting (alignment, color, font, highlight) uses
+inline `style` *attributes*, so the editor requires `style-src 'unsafe-inline'`
+(or `style-src-attr 'unsafe-inline'`). It uses no inline `<script>` or `eval`, so
+`script-src` can remain strict (nonce/hash based).
+
+**Integrator responsibilities.** Backend authentication/authorization, transport
+(HTTPS), CSP, and storage policy are the host's responsibility. At-rest
+encryption of the local IndexedDB store is not built in; for sensitive
+deployments, wrap the injected `LocalStoreAdapter` to encrypt values, and use
+`clearLocalData()` (e.g. on logout) to purge.
+
+## Accessibility & internationalization
+
+- Toolbar controls are keyboard-navigable with ARIA labels, active/pressed state,
+  and arrow-key (Home/End/←/→) movement between buttons.
+- The editing region is an ARIA `textbox`; provide an `ariaLabel`.
+- Color popovers close on `Escape`; image insertion prompts for alt text.
+- RTL is supported via the `dir` prop; all UI strings are externalized for
+  localization.
+
+## Subpath entry points
+
+Import only what you need to keep bundles lean.
+
+| Entry | Contents |
+|-------|----------|
+| `react-next-editor` | React component, hooks, and the full public API (default). |
+| `react-next-editor/core` | Framework-agnostic schema, commands, plugins (incl. pagination), and state factory. |
+| `react-next-editor/export` | Isomorphic DOCX/PDF/text/HTML converters and download helpers. |
+| `react-next-editor/import` | Best-effort `.docx` importer. |
+| `react-next-editor/persistence` | Adapters, IndexedDB/memory stores, autosave, connectivity, sync engine. |
+| `react-next-editor/server` | Node-only programmatic export service and route handler. |
+| `react-next-editor/styles.css` | The stylesheet. |
+
+## SSR & browser support
+
+The editor requires the DOM and must be loaded client-side only — use
+`next/dynamic` with `{ ssr: false }` (or a `'use client'` boundary). The package
+guards DOM access so importing it on the server does not crash, but the component
+itself renders only on the client.
+
+Supported browsers: the latest two versions of Chrome, Edge, Firefox, and Safari.
+
+## TypeScript
+
+The package ships complete type definitions for every public API. React is a peer
+dependency and is kept external so a single React instance is used.
+
+```ts
+import type {
+  EditorProps, EditorRef, DocumentJSON, FeatureFlags, PageConfig,
+  ThemeTokens, ToolbarConfig, EditorStrings, SaveStatus,
+  PersistenceConfig, SyncConfig, RemoteSyncAdapter, LocalStoreAdapter,
+} from 'react-next-editor';
+```
+
+## Architecture
+
+```
+src/
+  core/         schema (nodes/marks), commands, plugins, state, pagination
+  react/        Editor component, toolbar, status bar, error boundary, context
+  export/       isomorphic text / html / docx / pdf converters
+  import/       best-effort docx import
+  persistence/  adapter interfaces, IndexedDB + memory stores, autosave
+  sync/         connectivity monitor, sync engine
+  server/       programmatic export service, storage, PDF renderers, route handler
+  security/     URL / image / HTML / CSS sanitization
+  config/       types and defaults
+  styles/       editor.css
+```
+
+The document schema is the single source of truth: nodes/marks, commands,
+persistence, and every serializer derive from it.
+
+## Limitations & non-goals
+
+- No separate self-hosted document-rendering server (by design).
+- No real-time multi-user collaboration (the architecture leaves room for it).
+- DOCX import and export are best-effort, not byte-perfect round-trips of
+  arbitrary externally-authored Word documents.
+- Visual pagination breaks at block boundaries (no line-level splitting); a block
+  taller than a page overflows in place.
+
+## Development
 
 ```bash
-npm run build        # bundle (tsup): ESM + CJS + d.ts + styles.css
+npm run build        # bundle (tsup): ESM + CJS + .d.ts + styles.css
 npm run type-check   # tsc --noEmit
 npm run lint         # eslint
 npm test             # vitest

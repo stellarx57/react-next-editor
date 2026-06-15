@@ -1,5 +1,5 @@
-import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-GTSOC5MS.js';
-export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-GTSOC5MS.js';
+import { buildSchema, createCommands, createDoc, buildPlugins, createEditorState, countDocument } from './chunk-E5BWQ2BV.js';
+export { buildPlugins, buildSchema, countDocument, createCommands, createDoc, createEditorState, defaultSchema } from './chunk-E5BWQ2BV.js';
 import { exportDocument } from './chunk-IG2YLUFW.js';
 export { downloadBlob, downloadText, exportDocument, printDocumentToPdf } from './chunk-IG2YLUFW.js';
 import { IndexedDBStore, DocumentPersistence, SyncEngine, ConnectivityMonitor, requestPersistentStorage } from './chunk-O4GTLC3T.js';

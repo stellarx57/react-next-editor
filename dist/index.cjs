@@ -1,6 +1,6 @@
 'use strict';
 
-var chunkGK27G3XT_cjs = require('./chunk-GK27G3XT.cjs');
+var chunkMZMWHI46_cjs = require('./chunk-MZMWHI46.cjs');
 var chunkGFNFJ3FL_cjs = require('./chunk-GFNFJ3FL.cjs');
 var chunk3QWXTDLY_cjs = require('./chunk-3QWXTDLY.cjs');
 var chunkNJCEHQV3_cjs = require('./chunk-NJCEHQV3.cjs');
@@ -506,7 +506,7 @@ function StatusBar({ saveStatus, hasPersistence }) {
       setStats(null);
       return;
     }
-    const id = setTimeout(() => setStats(chunkGK27G3XT_cjs.countDocument(doc)), 300);
+    const id = setTimeout(() => setStats(chunkMZMWHI46_cjs.countDocument(doc)), 300);
     return () => clearTimeout(id);
   }, [doc]);
   return /* @__PURE__ */ jsxRuntime.jsxs("div", { className: "rne-statusbar", children: [
@@ -571,8 +571,8 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   cfgRef.current = config;
   const featureKey = react.useMemo(() => JSON.stringify(config.features), [config.features]);
   const engine = react.useMemo(() => {
-    const schema = chunkGK27G3XT_cjs.buildSchema(config.features);
-    const commands = chunkGK27G3XT_cjs.createCommands(schema);
+    const schema = chunkMZMWHI46_cjs.buildSchema(config.features);
+    const commands = chunkMZMWHI46_cjs.createCommands(schema);
     return { schema, commands };
   }, [featureKey]);
   const [editorState, setEditorState] = react.useState(null);
@@ -580,13 +580,13 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
   const [ready, setReady] = react.useState(false);
   const getJSON = react.useCallback(() => {
     const view = viewRef.current;
-    return view ? view.state.doc.toJSON() : chunkGK27G3XT_cjs.createDoc(engine.schema, null).toJSON();
+    return view ? view.state.doc.toJSON() : chunkMZMWHI46_cjs.createDoc(engine.schema, null).toJSON();
   }, [engine.schema]);
   const setContent = react.useCallback(
     (content) => {
       const view = viewRef.current;
       if (!view) return;
-      const doc = chunkGK27G3XT_cjs.createDoc(view.state.schema, content);
+      const doc = chunkMZMWHI46_cjs.createDoc(view.state.schema, content);
       const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
       view.updateState(state);
       setEditorState(state);
@@ -641,7 +641,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     if (!mount) return;
     void chunk5F6SPYCN_cjs.preloadSanitizer();
     const paginated2 = cfgRef.current.page.pagination === "visual";
-    const plugins = chunkGK27G3XT_cjs.buildPlugins(engine.schema, {
+    const plugins = chunkMZMWHI46_cjs.buildPlugins(engine.schema, {
       placeholder: cfgRef.current.placeholder,
       history: cfgRef.current.features.history,
       extraPlugins: propsRef.current.extensions?.plugins,
@@ -656,7 +656,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
       } : void 0
     });
     const initialContent = propsRef.current.value ?? propsRef.current.initialContent ?? null;
-    const state = chunkGK27G3XT_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
+    const state = chunkMZMWHI46_cjs.createEditorState({ schema: engine.schema, plugins, content: initialContent });
     const view = new prosemirrorView.EditorView(mount, {
       state,
       editable: () => !(propsRef.current.readOnly || propsRef.current.mode === "readonly"),
@@ -772,7 +772,7 @@ var EditorInner = react.forwardRef(function EditorInner2(props, ref) {
     const current = JSON.stringify(view.state.doc.toJSON());
     const next = JSON.stringify(props.value);
     if (current === next) return;
-    const doc = chunkGK27G3XT_cjs.createDoc(view.state.schema, props.value);
+    const doc = chunkMZMWHI46_cjs.createDoc(view.state.schema, props.value);
     const selectionPos = Math.min(view.state.selection.from, doc.content.size);
     const state = prosemirrorState.EditorState.create({ doc, plugins: view.state.plugins });
     const withSel = state.apply(
@@ -876,31 +876,31 @@ var Editor = react.forwardRef(function Editor2(props, ref) {
 
 Object.defineProperty(exports, "buildPlugins", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.buildPlugins; }
+  get: function () { return chunkMZMWHI46_cjs.buildPlugins; }
 });
 Object.defineProperty(exports, "buildSchema", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.buildSchema; }
+  get: function () { return chunkMZMWHI46_cjs.buildSchema; }
 });
 Object.defineProperty(exports, "countDocument", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.countDocument; }
+  get: function () { return chunkMZMWHI46_cjs.countDocument; }
 });
 Object.defineProperty(exports, "createCommands", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.createCommands; }
+  get: function () { return chunkMZMWHI46_cjs.createCommands; }
 });
 Object.defineProperty(exports, "createDoc", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.createDoc; }
+  get: function () { return chunkMZMWHI46_cjs.createDoc; }
 });
 Object.defineProperty(exports, "createEditorState", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.createEditorState; }
+  get: function () { return chunkMZMWHI46_cjs.createEditorState; }
 });
 Object.defineProperty(exports, "defaultSchema", {
   enumerable: true,
-  get: function () { return chunkGK27G3XT_cjs.defaultSchema; }
+  get: function () { return chunkMZMWHI46_cjs.defaultSchema; }
 });
 Object.defineProperty(exports, "downloadBlob", {
   enumerable: true,
