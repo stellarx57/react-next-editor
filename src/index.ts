@@ -22,6 +22,7 @@
 // React integration (primary surface)
 export {
   Editor,
+  DocumentView,
   EditorErrorBoundary,
   EditorContext,
   useEditorContext,
@@ -39,6 +40,7 @@ export type {
   SyncConfig,
   EditorContextValue,
 } from './react/types';
+export type { DocumentViewProps } from './react/DocumentView';
 
 // Configuration types & defaults
 export type {

@@ -195,6 +195,22 @@ content is unchanged.
 <Editor initialContent={docJson} readOnly /> // or mode="readonly"
 ```
 
+**Display-only (no editor) — `DocumentView`.** To merely *show* a document —
+in a card, a list, a preview — use `DocumentView` instead of a read-only
+`Editor`. It renders the document to HTML with the shared serializer and does
+**not** mount a ProseMirror `EditorView`, so it is dramatically cheaper per
+instance (ideal when many documents appear on one screen). Its HTML is produced
+by the package's sanitizing serializer and DOMPurify-hardened, so it is safe even
+for untrusted stored JSON.
+
+```tsx
+import { DocumentView } from 'react-next-editor-js';
+import 'react-next-editor-js/styles.css';
+
+<DocumentView value={docJson} />          // DocumentJSON, a JSON string, or null
+<DocumentView value={jsonString} className="my-doc" />
+```
+
 **Plain-text or empty start.** `initialContent` also accepts a plain string
 (split into paragraphs) or `null` (empty document).
 

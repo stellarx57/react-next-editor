@@ -1,6 +1,7 @@
 'use client';
 
 export { Editor } from './Editor';
+export { DocumentView, type DocumentViewProps } from './DocumentView';
 export { EditorErrorBoundary } from './ErrorBoundary';
 export { EditorContext, useEditorContext } from './EditorContext';
 export { Toolbar } from './toolbar/Toolbar';

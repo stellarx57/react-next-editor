@@ -283,6 +283,43 @@
   padding: 0;
 }
 
+/* ---- Lightweight read-only renderer (DocumentView) ---------------------------
+   Styles the HTML emitted by documentToHtml so a non-editor display matches the
+   editor's typography without mounting an EditorView. */
+.rne-document-view {
+  color: var(--rne-text-color, #1a1a1a);
+  font-family: var(--rne-font-family, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif);
+  font-size: var(--rne-font-size, 11pt);
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.rne-document-view > :first-child {
+  margin-top: 0;
+}
+.rne-document-view > :last-child {
+  margin-bottom: 0;
+}
+.rne-document-view p {
+  margin: 0 0 0.6em;
+}
+.rne-document-view img {
+  max-width: 100%;
+  height: auto;
+}
+.rne-document-view table {
+  border-collapse: collapse;
+  max-width: 100%;
+}
+.rne-document-view td,
+.rne-document-view th {
+  border: 1px solid var(--rne-border-color, #d8dadf);
+  padding: 4px 8px;
+}
+.rne-document-view a {
+  color: var(--rne-accent, #2563eb);
+}
+
 /* ---- ProseMirror base (inlined so consumers import only this stylesheet) ---- */
 .rne-root .ProseMirror {
   position: relative;
