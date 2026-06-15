@@ -457,6 +457,7 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
         dir={props.dir ?? 'ltr'}
       >
         {toolbarEnabled && <Toolbar config={props.toolbar || undefined} />}
+        {props.children}
         <div
           className={`rne-canvas${showChrome ? '' : ' rne-canvas--plain'}${paginated ? ' rne-canvas--paged' : ''}`}
         >

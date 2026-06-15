@@ -152,6 +152,13 @@ export interface EditorProps extends EditorEvents {
   ariaLabel?: string;
   /** Text direction for the document (NF-6, RTL awareness). Default 'ltr'. */
   dir?: 'ltr' | 'rtl' | 'auto';
+  /**
+   * Custom content rendered inside the editor's context provider, below the
+   * built-in toolbar. Components here may call {@link useEditorContext} to build
+   * custom toolbars, panels, or status indicators that reflect live editor
+   * state. Use with `toolbar={false}` to fully replace the default toolbar.
+   */
+  children?: React.ReactNode;
 }
 
 /** Value provided through {@link EditorContext} to toolbar and children. */
