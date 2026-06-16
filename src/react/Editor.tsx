@@ -10,7 +10,7 @@ import {
   useState,
 } from 'react';
 import { EditorView } from 'prosemirror-view';
-import { type Command, EditorState, TextSelection } from 'prosemirror-state';
+import { type Command, EditorState, Selection, TextSelection } from 'prosemirror-state';
 import { Node as PMNode, type Schema } from 'prosemirror-model';
 
 import type { DocumentJSON, EditorStrings, FeatureFlags, PageConfig, SaveStatus } from '../config/types';
@@ -378,6 +378,37 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.value]);
 
+  // ---- Click-anywhere: the whole editing surface is active (place the caret) ----
+  // The editable element only covers its own content; clicks on the page chrome
+  // around it (margins/padding, or empty space the content doesn't reach) would
+  // otherwise do nothing. Map such clicks to the nearest document position so the
+  // user can start typing anywhere within the surface. Clicks on the editable
+  // content itself are left to ProseMirror's native handling.
+  const handleSurfaceMouseDown = useCallback((e: React.MouseEvent) => {
+    const view = viewRef.current;
+    if (!view || !view.editable) return;
+    if (view.dom.contains(e.target as Node)) return;
+    e.preventDefault();
+    const size = view.state.doc.content.size;
+    // Map the click to the nearest document position; fall back to the document
+    // end when coordinate mapping is unavailable (no layout) so the caret is
+    // always placed and the user can start typing.
+    let pos = size;
+    try {
+      const found = view.posAtCoords({ left: e.clientX, top: e.clientY });
+      if (found) pos = Math.max(0, Math.min(found.pos, size));
+    } catch {
+      /* no layout — use the document end */
+    }
+    try {
+      const selection = Selection.near(view.state.doc.resolve(pos), -1);
+      view.dispatch(view.state.tr.setSelection(selection).scrollIntoView());
+    } catch {
+      /* never let a stray click throw */
+    }
+    view.focus();
+  }, []);
+
   // ---- Context for toolbar/children ----
   const runCommand = useCallback((command: Command): boolean => {
     const view = viewRef.current;
@@ -466,6 +497,7 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
         {props.children}
         <div
           className={`rne-canvas${showChrome ? '' : ' rne-canvas--plain'}${paginated ? ' rne-canvas--paged' : ''}`}
+          onMouseDown={handleSurfaceMouseDown}
         >
           {paginated ? (
             <div className="rne-paged">
