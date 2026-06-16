@@ -195,6 +195,26 @@
   background: var(--rne-page-background);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
   border-radius: 2px;
+  /* Lay the page out as a column so the editable surface can fill it: the
+     contenteditable is otherwise only as tall as its text, leaving the empty
+     area below the last line non-clickable (the caret could only be placed on
+     existing text). Filling the page makes the whole surface clickable. */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Single-flow only (paged mode positions its own mount/ProseMirror absolutely). */
+.rne-page .rne-mount {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.rne-page .ProseMirror {
+  flex: 1 1 auto;
+  /* The editable area fills the page; clicking anywhere within it places the
+     caret (ProseMirror maps a click below the last line to the nearest position). */
 }
 
 .rne-canvas--plain {
