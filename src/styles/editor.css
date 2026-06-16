@@ -123,6 +123,10 @@
 
 .rne-select {
   height: 30px;
+  /* Guarantee the control is wide enough for its longest placeholder
+     ("Font size" / "Normal text") plus the chevron, so the dropdown indicator
+     never crowds or blocks the text even when the current value is short. */
+  min-width: 110px;
   max-width: 170px;
   /* Reserve room on the right for the custom chevron so long option text
      (e.g. "Font size") is never blocked by the dropdown indicator. */
