@@ -358,6 +358,12 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
   useEffect(() => {
     const view = viewRef.current;
     if (!view || props.value == null) return;
+    // While the user is typing, the editor's own state is authoritative: an
+    // incoming `value` is almost always the echo of the change we just emitted
+    // through `onChange`. Reconciling it here would (a) cost two full-document
+    // serializations per keystroke and (b) risk reverting in-flight edits. Defer
+    // until the editor is not focused, when an external value change is real.
+    if (view.hasFocus()) return;
     const current = JSON.stringify(view.state.doc.toJSON());
     const next = JSON.stringify(props.value);
     if (current === next) return;
