@@ -32,8 +32,12 @@ export interface DocxImportOptions {
   styleMap?: string[];
 }
 
-/** Input accepted by mammoth: an ArrayBuffer (browser) or a Buffer (Node). */
-type MammothInput = { arrayBuffer: ArrayBuffer } | { buffer: Uint8Array };
+/**
+ * Input accepted by mammoth. Its browser build reads only `arrayBuffer`; its
+ * Node build reads only `buffer` (or `path`). We populate both so whichever
+ * build a bundler resolved finds its supported key.
+ */
+type MammothInput = { arrayBuffer?: ArrayBuffer; buffer?: Uint8Array };
 
 /** Minimal structural type for the parts of mammoth we use. */
 interface MammothModule {
@@ -90,29 +94,35 @@ const DEFAULT_STYLE_MAP = [
 ];
 
 /**
- * Build the mammoth input. In Node (server/tests) a `Buffer` is used to avoid
- * cross-realm `instanceof ArrayBuffer` issues; in the browser an `ArrayBuffer`
- * is passed.
+ * Build the mammoth input. The raw bytes are normalized to an `ArrayBuffer`, and
+ * a `Buffer` view is added when one is available. BOTH keys are supplied because
+ * mammoth's browser and Node builds accept different ones (`arrayBuffer` vs
+ * `buffer`) — and `typeof Buffer` is not a reliable environment signal in
+ * bundled browsers (polyfills and the browser build's own global `Buffer` leak),
+ * so it must not be used to *choose* between them.
  */
 async function buildMammothInput(input: ArrayBuffer | Uint8Array | Blob): Promise<MammothInput> {
-  const isBlob = typeof Blob !== 'undefined' && input instanceof Blob;
+  let arrayBuffer: ArrayBuffer;
+  if (typeof Blob !== 'undefined' && input instanceof Blob) {
+    arrayBuffer = await input.arrayBuffer();
+  } else if (input instanceof ArrayBuffer) {
+    arrayBuffer = input;
+  } else if (input instanceof Uint8Array) {
+    arrayBuffer = input.buffer.slice(
+      input.byteOffset,
+      input.byteOffset + input.byteLength,
+    ) as ArrayBuffer;
+  } else {
+    throw new Error('react-next-editor: unsupported DOCX input type.');
+  }
+
+  const out: MammothInput = { arrayBuffer };
+  // A Buffer view for mammoth's Node build; harmless (ignored) for the browser
+  // build, which reads `arrayBuffer` first.
   if (typeof Buffer !== 'undefined') {
-    if (Buffer.isBuffer(input)) return { buffer: input };
-    if (input instanceof Uint8Array) return { buffer: Buffer.from(input) };
-    if (input instanceof ArrayBuffer) return { buffer: Buffer.from(new Uint8Array(input)) };
-    if (isBlob) return { buffer: Buffer.from(new Uint8Array(await input.arrayBuffer())) };
+    out.buffer = Buffer.from(new Uint8Array(arrayBuffer));
   }
-  if (input instanceof ArrayBuffer) return { arrayBuffer: input };
-  if (isBlob) return { arrayBuffer: await input.arrayBuffer() };
-  if (input instanceof Uint8Array) {
-    return {
-      arrayBuffer: input.buffer.slice(
-        input.byteOffset,
-        input.byteOffset + input.byteLength,
-      ) as ArrayBuffer,
-    };
-  }
-  throw new Error('react-next-editor: unsupported DOCX input type.');
+  return out;
 }
 
 /**

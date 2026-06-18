@@ -1,6 +1,6 @@
 {
   "name": "react-next-editor-js",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "A comprehensive, performant, secure, configurable and pluggable Word-style rich document editor for React/Next.js, built directly on ProseMirror, with DOCX/PDF/text export and offline-first persistence.",
   "license": "MIT",
   "author": "stellarx57",
