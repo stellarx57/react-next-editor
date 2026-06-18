@@ -83,7 +83,7 @@ interface ToolbarProps {
 /** Data-driven, keyboard-accessible toolbar (F-1–F-3, F-10.6, NF-4). */
 export function Toolbar({ config }: ToolbarProps) {
   const ctx = useEditorContext();
-  const { state, commands, strings, features, run, fontFamilies, fontSizes, importDocx } = ctx;
+  const { state, commands, strings, features, run, fontFamilies, fontSizes, importDocx, exportAs } = ctx;
 
   const groups = config?.groups ?? DEFAULT_TOOLBAR_GROUPS;
   const sticky = config?.sticky ?? true;
@@ -295,6 +295,44 @@ export function Toolbar({ config }: ToolbarProps) {
             onClick={() => fileInputRef.current?.click()}
           >
             <ToolbarIcon name="importDocx" />
+          </button>
+        );
+      case 'exportDocx':
+        return (
+          <button
+            key={id}
+            type="button"
+            className="rne-btn"
+            title={strings.exportDocx}
+            aria-label={strings.exportDocx}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              exportAs('docx').catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[react-next-editor] DOCX export failed:', err);
+              });
+            }}
+          >
+            <ToolbarIcon name="exportDocx" />
+          </button>
+        );
+      case 'exportPdf':
+        return (
+          <button
+            key={id}
+            type="button"
+            className="rne-btn"
+            title={strings.exportPdf}
+            aria-label={strings.exportPdf}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              exportAs('pdf').catch((err) => {
+                // eslint-disable-next-line no-console
+                console.error('[react-next-editor] PDF export failed:', err);
+              });
+            }}
+          >
+            <ToolbarIcon name="exportPdf" />
           </button>
         );
       default:

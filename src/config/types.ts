@@ -155,7 +155,9 @@ export type ToolbarItemId =
   | 'image'
   | 'table'
   | 'pageBreak'
-  | 'importDocx';
+  | 'importDocx'
+  | 'exportDocx'
+  | 'exportPdf';
 
 /**
  * Toolbar configuration (F-10.6). `groups` defines ordered groups of item ids;
@@ -221,6 +223,8 @@ export interface EditorStrings {
   deleteTable: string;
   pageBreak: string;
   importDocx: string;
+  exportDocx: string;
+  exportPdf: string;
   undo: string;
   redo: string;
   words: string;

@@ -214,6 +214,52 @@ import 'react-next-editor-js/styles.css';
 **Plain-text or empty start.** `initialContent` also accepts a plain string
 (split into paragraphs) or `null` (empty document).
 
+**Form field — `RichTextField`.** A form-first wrapper around `Editor` for the
+common case of storing rich text as a JSON **string** in form state. It speaks
+strings on `value`/`onChange`, debounces changes, flushes on blur, and exposes
+`commit()` for submit-time flushing — so you don't re-implement that glue per
+field. `download` adds Download Word/PDF toolbar actions and `allowDocxImport`
+enables Word upload, with no custom UI. Every other `Editor` prop (offline
+`persistence`/`documentId`, `readOnly`, `theme`, `page`, …) passes straight
+through.
+
+```tsx
+import { RichTextField, useEditorApiRef } from 'react-next-editor-js';
+
+function OrderField() {
+  const [value, setValue] = useState('');           // a document-JSON string
+  const [text, setText] = useState('');             // optional plain-text mirror
+  const api = useEditorApiRef();                    // survives next/dynamic
+
+  return (
+    <form onSubmit={(e) => { api.current?.commit(); /* value/text are now current */ }}>
+      <RichTextField
+        apiRef={api}
+        value={value}
+        onChange={(json, { text }) => { setValue(json); setText(text); }}
+        documentId="order-42" offline                 // durable offline autosave
+        download allowDocxImport                       // Word/PDF download + .docx upload
+        placeholder="Record the order…"
+      />
+    </form>
+  );
+}
+```
+
+`onChange(value, meta)` gives the serialized JSON string plus
+`{ text, html, json }` — handy when you persist a plain-text column alongside the
+rich JSON. Use `debounceMs={0}` (or call `commit()`) when a submit must read the
+latest content immediately.
+
+**Text preview — `DocumentText`.** Render a document as clamped **plain text**
+(no editor, no HTML) for list rows, cards, and table cells:
+
+```tsx
+import { DocumentText } from 'react-next-editor-js';
+
+<DocumentText value={docJson} clamp={3} empty="No content recorded." />
+```
+
 ### Saving to your backend
 
 `onChange` fires on every keystroke, so debounce writes to your API. For
@@ -344,6 +390,11 @@ The available item ids are exported as the `ToolbarItemId` union, and the defaul
 layout is `DEFAULT_TOOLBAR_GROUPS`. Items whose feature is disabled are filtered
 out automatically.
 
+Two download items — `exportDocx` (Download Word) and `exportPdf` (Download
+PDF) — are available but **not** in the default layout; add them to a group to
+surface in-toolbar downloads (they call `exportAs('docx' | 'pdf')`). `RichTextField`
+adds them for you via its `download` prop.
+
 To go beyond reordering — adding your own buttons, dropdowns, or panels — hide
 the built-in toolbar and render your own controls as `children`, reading live
 editor state through `useEditorContext()`. See
@@ -382,9 +433,22 @@ set is English.
 <Editor strings={{ bold: 'Gras', italic: 'Italique', link: 'Lien' }} />
 ```
 
-## Imperative API (ref)
+## Imperative API (ref or `apiRef`)
 
-A `ref` of type `EditorRef` exposes an imperative handle.
+A `ref` of type `EditorRef` exposes an imperative handle. In Next.js App Router
+the editor is loaded via `next/dynamic(..., { ssr: false })`, which does **not**
+forward React refs — so for imperative access pass an **`apiRef`** prop instead
+(a plain mutable ref created with `useEditorApiRef()`). It is populated on mount
+and cleared on unmount, and exposes the same `EditorRef` API:
+
+```tsx
+import { useEditorApiRef } from 'react-next-editor-js';
+
+const api = useEditorApiRef();
+// …
+<Editor apiRef={api} /* … */ />;
+await api.current?.exportAs('docx', 'doc-2024-08');
+```
 
 | Method | Returns | Description |
 |--------|---------|-------------|
@@ -563,6 +627,17 @@ import { importDocx } from 'react-next-editor-js/import';
 const { doc, warnings, html } = await importDocx(arrayBuffer, schema, {
   // Optional extra mammoth style mappings (merged with the built-in defaults):
   styleMap: ["p[style-name='Legal Heading'] => h2:fresh"],
+});
+```
+
+When you don't already have a schema, `importDocxToJSON` builds one from feature
+flags internally and returns document JSON directly — pass the same `features`
+you give the editor so the result is guaranteed to load:
+
+```ts
+import { importDocxToJSON } from 'react-next-editor-js/import';
+const { doc, warnings } = await importDocxToJSON(arrayBuffer, {
+  features: { table: false }, // optional; defaults to all features enabled
 });
 ```
 

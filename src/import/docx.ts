@@ -1,5 +1,6 @@
 import { DOMParser as PMDOMParser, type Schema } from 'prosemirror-model';
-import type { DocumentJSON } from '../config/types';
+import type { DocumentJSON, FeatureFlags } from '../config/types';
+import { buildSchema } from '../core/schema/schema';
 import { sanitizeHtml } from '../security/sanitize';
 
 /**
@@ -150,4 +151,27 @@ export async function importDocx(
     warnings: messages.map((m) => m.message),
     html,
   };
+}
+
+/** Options for {@link importDocxToJSON}. */
+export interface DocxToJsonOptions extends DocxImportOptions {
+  /**
+   * Feature flags controlling which schema nodes/marks the imported document may
+   * use. Defaults to all features enabled (matching a default editor instance).
+   */
+  features?: Partial<FeatureFlags>;
+}
+
+/**
+ * Convenience over {@link importDocx}: builds the editor schema internally from
+ * the given feature flags, so callers can convert a `.docx` to document JSON
+ * without constructing a ProseMirror {@link Schema} themselves. Pass the same
+ * `features` you give the editor so the result is guaranteed to load.
+ */
+export async function importDocxToJSON(
+  input: ArrayBuffer | Uint8Array | Blob,
+  options: DocxToJsonOptions = {},
+): Promise<DocxImportResult> {
+  const schema = buildSchema(options.features);
+  return importDocx(input, schema, options);
 }

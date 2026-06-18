@@ -46,6 +46,24 @@ describe('Toolbar accessibility', () => {
     expect(document.activeElement).toBe(items[0]);
   });
 
+  it('renders export buttons when a toolbar group requests them', async () => {
+    const { container } = render(
+      <Editor
+        initialContent={initial}
+        persistence={{ enabled: false }}
+        toolbar={{ groups: [['bold'], ['exportDocx', 'exportPdf']] }}
+      />,
+    );
+    await waitFor(() => expect(container.querySelector('.rne-toolbar')).not.toBeNull());
+    expect(container.querySelector('[aria-label="Download Word"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Download PDF"]')).not.toBeNull();
+    // Default toolbars (no explicit group) must NOT gain export buttons.
+    cleanup();
+    const plain = render(<Editor initialContent={initial} persistence={{ enabled: false }} />);
+    await waitFor(() => expect(plain.container.querySelector('.rne-toolbar')).not.toBeNull());
+    expect(plain.container.querySelector('[aria-label="Download Word"]')).toBeNull();
+  });
+
   it('prompts for alt text when inserting an image (NF-4)', async () => {
     const ref = createRef<EditorRef>();
     const promptSpy = vi

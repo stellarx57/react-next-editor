@@ -3,7 +3,7 @@ import type { DocumentJSON } from '../config/types';
 import { defaultSchema } from '../core/schema/schema';
 import { documentToDocxBuffer } from '../export/docx';
 import { documentToText } from '../export/text';
-import { importDocx } from './docx';
+import { importDocx, importDocxToJSON } from './docx';
 
 const source: DocumentJSON = {
   type: 'doc',
@@ -91,5 +91,29 @@ describe('importDocx (round-trip from our own exporter)', () => {
     // Re-parsing the JSON must succeed (valid document).
     expect(() => JSON.parse(JSON.stringify(result.doc))).not.toThrow();
     expect(Array.isArray(result.warnings)).toBe(true);
+  });
+});
+
+describe('importDocxToJSON (schema built internally)', () => {
+  it('converts a .docx to document JSON without a caller-supplied schema', async () => {
+    const buffer = await documentToDocxBuffer(source);
+    const result = await importDocxToJSON(new Uint8Array(buffer));
+    expect(result.doc.type).toBe('doc');
+    const text = documentToText(result.doc);
+    expect(text).toContain('Judgement of the Tribunal');
+    expect(text).toContain('First ground');
+  });
+
+  it('honours feature flags when building the schema', async () => {
+    const buffer = await documentToDocxBuffer(source);
+    // With lists disabled, list structure must not appear in the result.
+    const result = await importDocxToJSON(new Uint8Array(buffer), {
+      features: { bulletList: false, orderedList: false, taskList: false },
+    });
+    const types = (result.doc.content ?? []).map((n) => n.type);
+    expect(types).not.toContain('bullet_list');
+    expect(types).not.toContain('ordered_list');
+    // The list text survives as plain paragraphs.
+    expect(documentToText(result.doc)).toContain('First ground');
   });
 });

@@ -22,7 +22,10 @@
 // React integration (primary surface)
 export {
   Editor,
+  useEditorApiRef,
+  RichTextField,
   DocumentView,
+  DocumentText,
   EditorErrorBoundary,
   EditorContext,
   useEditorContext,
@@ -40,7 +43,13 @@ export type {
   SyncConfig,
   EditorContextValue,
 } from './react/types';
+export type {
+  RichTextFieldProps,
+  RichTextFieldRef,
+  RichTextFieldChangeMeta,
+} from './react/RichTextField';
 export type { DocumentViewProps } from './react/DocumentView';
+export type { DocumentTextProps } from './react/DocumentText';
 
 // Configuration types & defaults
 export type {
@@ -103,7 +112,13 @@ export type {
 } from './export/index';
 
 // Document import (best-effort DOCX → schema)
-export { importDocx, type DocxImportResult, type DocxImportOptions } from './import/index';
+export {
+  importDocx,
+  importDocxToJSON,
+  type DocxImportResult,
+  type DocxImportOptions,
+  type DocxToJsonOptions,
+} from './import/index';
 
 // Persistence & sync
 export {

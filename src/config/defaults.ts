@@ -118,6 +118,8 @@ export const DEFAULT_STRINGS: EditorStrings = {
   deleteTable: 'Delete table',
   pageBreak: 'Page break',
   importDocx: 'Import .docx',
+  exportDocx: 'Download Word',
+  exportPdf: 'Download PDF',
   undo: 'Undo',
   redo: 'Redo',
   words: 'words',

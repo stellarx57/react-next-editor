@@ -101,6 +101,16 @@ function computePaginationGeometry(page: PageConfig): PaginationGeometry | null 
   };
 }
 
+/**
+ * Create a ref object for {@link EditorProps.apiRef}. Unlike a React `ref`, this
+ * plain mutable ref survives `next/dynamic(..., { ssr: false })`, so it is the
+ * recommended way to obtain the {@link EditorRef} imperative API in Next.js App
+ * Router code. The editor populates `.current` on mount and clears it on unmount.
+ */
+export function useEditorApiRef(): React.MutableRefObject<EditorRef | null> {
+  return useRef<EditorRef | null>(null);
+}
+
 const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(props, ref) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -164,6 +174,16 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
     [],
   );
 
+  const exportAs = useCallback(
+    (format: 'docx' | 'pdf' | 'txt' | 'html', filename?: string) =>
+      exportDocument(getJSON(), format, {
+        filename: filename ?? propsRef.current.documentId,
+        page: cfgRef.current.page,
+        title: filename ?? propsRef.current.documentId,
+      }),
+    [getJSON],
+  );
+
   const handle = useMemo<EditorRef>(
     () => ({
       getJSON,
@@ -179,20 +199,27 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
       clearLocalData: async () => {
         await persistenceRef.current?.clearLocal();
       },
-      exportAs: (format, filename) =>
-        exportDocument(getJSON(), format, {
-          filename: filename ?? propsRef.current.documentId,
-          page: cfgRef.current.page,
-          title: filename ?? propsRef.current.documentId,
-        }),
+      exportAs,
       getView: () => viewRef.current,
       getState: () => viewRef.current?.state ?? null,
       getSchema: () => viewRef.current?.state.schema ?? null,
     }),
-    [getJSON, setContent, importDocxIntoEditor],
+    [getJSON, setContent, importDocxIntoEditor, exportAs],
   );
 
   useImperativeHandle(ref, () => handle, [handle]);
+
+  // Mirror the imperative handle onto the optional `apiRef` prop. Consumers that
+  // load the editor through `next/dynamic` (which does not forward React refs)
+  // pass an `apiRef` and still get the full API. Cleared on unmount.
+  useEffect(() => {
+    const apiRef = props.apiRef;
+    if (!apiRef) return;
+    apiRef.current = handle;
+    return () => {
+      if (apiRef.current === handle) apiRef.current = null;
+    };
+  }, [props.apiRef, handle]);
 
   // ---- Create the ProseMirror view once (golden rule: PM owns the DOM) ----
   useEffect(() => {
@@ -432,8 +459,9 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
       editable: config.editable,
       run: runCommand,
       importDocx: importDocxIntoEditor,
+      exportAs,
     }),
-    [editorState, engine, config, runCommand, importDocxIntoEditor],
+    [editorState, engine, config, runCommand, importDocxIntoEditor, exportAs],
   );
 
   // ---- Layout / page surface ----

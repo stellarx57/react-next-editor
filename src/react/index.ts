@@ -1,7 +1,14 @@
 'use client';
 
-export { Editor } from './Editor';
+export { Editor, useEditorApiRef } from './Editor';
+export {
+  RichTextField,
+  type RichTextFieldProps,
+  type RichTextFieldRef,
+  type RichTextFieldChangeMeta,
+} from './RichTextField';
 export { DocumentView, type DocumentViewProps } from './DocumentView';
+export { DocumentText, type DocumentTextProps } from './DocumentText';
 export { EditorErrorBoundary } from './ErrorBoundary';
 export { EditorContext, useEditorContext } from './EditorContext';
 export { Toolbar } from './toolbar/Toolbar';

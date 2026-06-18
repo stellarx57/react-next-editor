@@ -63,6 +63,12 @@ const PATHS: Record<string, JSX.Element> = {
   importDocx: (
     <path d="M5 3h9l5 5v6h-2V9h-4V5H7v14h5v2H5V3zm8 11 4 4 4-4h-3v-4h-2v4h-3z" />
   ),
+  // Download Word: a document sheet with a downward arrow.
+  exportDocx: (
+    <path d="M6 2h8l4 4v16H6V2zm7 1.5V7h3.5L13 3.5zM11 10v4H8.5l3.5 3.5 3.5-3.5H13v-4h-2z" />
+  ),
+  // Download PDF: a download tray with a downward arrow.
+  exportPdf: <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18h14v2H5v-2z" />,
 };
 
 export function ToolbarIcon({ name }: { name: string }): JSX.Element {

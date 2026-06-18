@@ -114,6 +114,14 @@ export interface EditorProps extends EditorEvents {
   initialContent?: DocumentJSON | string | null;
   /** Controlled value (with `onChange`) for controlled usage (F-10.20). */
   value?: DocumentJSON | null;
+  /**
+   * Imperative handle exposed as a *prop*, in addition to `ref`. Because it is a
+   * plain prop it survives `next/dynamic(..., { ssr: false })`, which does not
+   * forward React refs. Create one with {@link useEditorApiRef}; the editor
+   * assigns its {@link EditorRef} to `apiRef.current` on mount and clears it on
+   * unmount.
+   */
+  apiRef?: React.MutableRefObject<EditorRef | null>;
   /** Editing mode (F-10.3). `readOnly` is a convenience alias. */
   mode?: EditorMode;
   readOnly?: boolean;
@@ -177,4 +185,6 @@ export interface EditorContextValue {
   run: (command: Command) => boolean;
   /** Import a `.docx` file, replacing content (best-effort). */
   importDocx: (file: ArrayBuffer | Uint8Array | Blob) => Promise<{ warnings: string[] }>;
+  /** Trigger an interactive export + download/print of the current document. */
+  exportAs: (format: 'docx' | 'pdf' | 'txt' | 'html', filename?: string) => Promise<void>;
 }
