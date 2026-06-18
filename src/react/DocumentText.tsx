@@ -5,7 +5,10 @@ import type { DocumentJSON } from '../config/types';
 import { documentToText, type TextConversionOptions } from '../export/text';
 
 export interface DocumentTextProps {
-  /** The document: ProseMirror JSON, a JSON string, or null/undefined. */
+  /**
+   * The content: ProseMirror JSON, a document-JSON string, a plain-text string
+   * (rendered as-is — useful for legacy/pre-rich-text values), or null.
+   */
   value: DocumentJSON | string | null | undefined;
   /**
    * Clamp the rendered text to N lines with a trailing ellipsis (CSS
@@ -37,11 +40,13 @@ function toDoc(value: DocumentTextProps['value']): DocumentJSON | null {
 }
 
 /**
- * A read-only, plain-text preview of a document. Serializes with the shared
- * {@link documentToText} converter and renders the result as text only (no HTML,
- * no editor, no `dangerouslySetInnerHTML`) — safe even for attacker-controlled
- * JSON. Ideal for list rows, cards, and table cells that need a short, clamped
- * summary of rich content.
+ * A read-only, plain-text preview of a document. Serializes document JSON with
+ * the shared {@link documentToText} converter and renders the result as text
+ * only (no HTML, no editor, no `dangerouslySetInnerHTML`) — safe even for
+ * attacker-controlled JSON. A string that is **not** document JSON is treated as
+ * already-plain text and rendered as-is, so this also previews legacy/migrated
+ * values that were stored as plain strings. Ideal for list rows, cards, and
+ * table cells that need a short, clamped summary of mixed content.
  */
 export function DocumentText({
   value,
@@ -53,6 +58,12 @@ export function DocumentText({
   style,
 }: DocumentTextProps): ReactElement {
   const text = useMemo(() => {
+    if (typeof value === 'string') {
+      // A document-JSON string is converted; any other string is already plain
+      // text (a legacy/pre-rich-text value) and is rendered verbatim.
+      const doc = toDoc(value);
+      return (doc ? documentToText(doc, textOptions) : value).trim();
+    }
     const doc = toDoc(value);
     return doc ? documentToText(doc, textOptions).trim() : '';
   }, [value, textOptions]);

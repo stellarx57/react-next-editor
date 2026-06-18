@@ -31,6 +31,15 @@ describe('<DocumentText>', () => {
     expect(container.textContent).toContain('First line of the order.');
   });
 
+  it('renders a legacy plain-text string verbatim (not document JSON)', () => {
+    const { container } = render(<DocumentText value="Just plain legacy text." />);
+    expect(container.textContent).toBe('Just plain legacy text.');
+
+    // A non-document JSON value still falls back to its string form.
+    const numeric = render(<DocumentText value="42" />);
+    expect(numeric.container.textContent).toBe('42');
+  });
+
   it('does not emit HTML markup (text only)', () => {
     const xss: DocumentJSON = {
       type: 'doc',
