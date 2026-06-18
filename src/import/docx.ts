@@ -52,10 +52,12 @@ async function loadMammoth(): Promise<MammothModule> {
   if (!mammothPromise) {
     mammothPromise = (async () => {
       try {
-        // Variable specifier so the optional dependency is not resolved at
-        // type-check/build time when it is absent.
-        const spec = 'mammoth';
-        const mod = (await import(spec)) as { default?: MammothModule } & MammothModule;
+        // Plain dynamic import so bundlers code-split `mammoth` into an async
+        // chunk and resolve its `browser` build — DOCX import works in the
+        // browser, not just in Node. `mammoth` is an optional peer: consumers
+        // that never import DOCX can exclude it from their build (e.g. webpack
+        // `resolve.alias: { mammoth: false }`).
+        const mod = (await import('mammoth')) as { default?: MammothModule } & MammothModule;
         return (mod.default ?? mod) as MammothModule;
       } catch {
         throw new Error(

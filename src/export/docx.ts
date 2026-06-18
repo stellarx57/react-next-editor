@@ -34,19 +34,17 @@ type DocxModule = typeof DocxNamespace;
 let docxModulePromise: Promise<DocxModule> | null = null;
 async function loadDocx(): Promise<DocxModule> {
   if (!docxModulePromise) {
-    // Load `docx` through a variable specifier (with bundler-ignore hints) so
-    // webpack/Vite/Next don't statically resolve it at build time. Consumers who
-    // never export DOCX therefore don't need `docx` installed just to bundle the
-    // editor — it is loaded on demand, and throws a clear error only if a DOCX
-    // export is actually attempted without it.
-    const specifier = 'docx';
-    docxModulePromise = import(/* webpackIgnore: true */ /* @vite-ignore */ specifier).catch(
-      () => {
-        throw new Error(
-          "react-next-editor: DOCX export requires the optional 'docx' dependency. Install it (npm i docx).",
-        );
-      },
-    ) as Promise<DocxModule>;
+    // Load `docx` via a plain dynamic import so bundlers (webpack/Vite/Next)
+    // code-split it into an async chunk and resolve its browser/ESM build — DOCX
+    // export then works in the browser, not just in Node. `docx` is an optional
+    // peer: consumers that never export DOCX can exclude it from their build
+    // (e.g. webpack `resolve.alias: { docx: false }`); attempting an export
+    // without it throws the clear error below.
+    docxModulePromise = import('docx').catch(() => {
+      throw new Error(
+        "react-next-editor: DOCX export requires the optional 'docx' dependency. Install it (npm i docx).",
+      );
+    }) as Promise<DocxModule>;
   }
   return docxModulePromise;
 }
