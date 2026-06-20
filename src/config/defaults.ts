@@ -127,17 +127,39 @@ export const DEFAULT_STRINGS: EditorStrings = {
   readOnly: 'Read only',
 };
 
-/** Font families offered by the font picker. Consumers can override via config. */
+/**
+ * Font families offered by the font picker — a comprehensive set of common
+ * Office and web-safe families (sans-serif, serif and monospace). On systems
+ * lacking a given face the browser substitutes a generic fallback. Consumers can
+ * override the whole list via the `fontFamilies` prop.
+ */
 export const DEFAULT_FONT_FAMILIES: string[] = [
   'Arial',
+  'Arial Black',
+  'Book Antiqua',
   'Calibri',
   'Cambria',
+  'Candara',
+  'Century Gothic',
+  'Comic Sans MS',
+  'Consolas',
+  'Constantia',
+  'Corbel',
+  'Courier New',
+  'Franklin Gothic Medium',
+  'Garamond',
   'Georgia',
   'Helvetica',
+  'Impact',
+  'Lucida Console',
+  'Lucida Sans Unicode',
+  'Palatino Linotype',
+  'Roboto',
+  'Segoe UI',
+  'Tahoma',
   'Times New Roman',
   'Trebuchet MS',
   'Verdana',
-  'Courier New',
 ];
 
 /** Font sizes (pt) offered by the size picker. */

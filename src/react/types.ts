@@ -59,6 +59,26 @@ export interface EditorEvents {
   onSelectionChange?: (state: EditorState) => void;
   /** Fired when the local-save / sync status changes (F-9.4). */
   onSaveStatusChange?: (status: SaveStatus, detail?: { error?: string }) => void;
+  /**
+   * Fired when a restorable locally-persisted draft (e.g. unsaved offline edits)
+   * is detected on (re)mount and differs from the current content. When this
+   * handler is provided the editor does NOT auto-apply the draft — it defers the
+   * decision to the host, which typically asks the user, then calls
+   * `actions.restore()` to apply it (fires `onChange` + `onLocalRestore`) or
+   * `actions.discard()` to drop the local draft. Without this handler the draft
+   * is auto-applied per {@link PersistenceConfig.restore}.
+   */
+  onLocalDraft?: (
+    draft: { doc: DocumentJSON; updatedAt: number; rev: number },
+    actions: { restore: () => void; discard: () => Promise<void> },
+  ) => void;
+  /**
+   * Fired when a locally-persisted draft (e.g. unsaved offline edits) is applied
+   * over the current content — either auto-restored or via `onLocalDraft`'s
+   * `restore()`. Lets the host surface "restored your unsaved changes". Not fired
+   * when the draft already equals the on-screen content.
+   */
+  onLocalRestore?: (info: { updatedAt: number; rev: number }) => void;
   /** Fired when the editor or a feature throws; contained by the error boundary. */
   onError?: (error: Error) => void;
 }
@@ -100,6 +120,24 @@ export interface PersistenceConfig {
   debounceMs?: number;
   /** Request persistent storage on mount (F-9.11). Default true. */
   requestPersistent?: boolean;
+  /**
+   * Which locally-persisted draft to surface when the editor (re)mounts:
+   * - `'whenDirty'` (default): restore a draft that has unsaved local changes
+   *   (`dirty`) even over a controlled `value`, so offline edits made in a prior
+   *   session are never lost on reopen; a clean (already-synced) draft yields to
+   *   the controlled/server value.
+   * - `'whenEmpty'`: restore only when no controlled `value` is set (the
+   *   controlled/server value always wins when present).
+   * - `'always'`: restore the local draft whenever one exists.
+   *
+   * This selects which drafts are *eligible*. To ASK the user before applying an
+   * eligible draft (recommended for controlled editors), provide
+   * {@link EditorEvents.onLocalDraft} — the editor then defers instead of
+   * auto-applying. Otherwise the eligible draft is auto-applied, firing
+   * {@link EditorEvents.onChange} (so the controlled parent matches what is
+   * shown) and {@link EditorEvents.onLocalRestore}.
+   */
+  restore?: 'whenDirty' | 'whenEmpty' | 'always';
 }
 
 /**

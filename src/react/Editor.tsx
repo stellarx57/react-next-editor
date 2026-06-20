@@ -365,9 +365,51 @@ const EditorInner = forwardRef<EditorRef, EditorProps>(function EditorInner(prop
     void (async () => {
       const record = await persistence.load();
       if (cancelled || !record) return;
-      // Only restore from local storage when no explicit controlled value is set.
-      if (propsRef.current.value == null) {
+      const view = viewRef.current;
+      if (!view) return;
+
+      // Decide whether to surface the locally-persisted draft. By default a
+      // *dirty* draft (unsaved local edits) is restored even over a controlled
+      // value, so offline work made in a prior session is never lost on reopen;
+      // a clean (already-synced) draft yields to the controlled/server value.
+      const strategy = propsRef.current.persistence?.restore ?? 'whenDirty';
+      const hasControlledValue = propsRef.current.value != null;
+      const shouldRestore =
+        strategy === 'always'
+          ? true
+          : strategy === 'whenEmpty'
+            ? !hasControlledValue
+            : /* whenDirty */ !hasControlledValue || record.dirty;
+      if (!shouldRestore) return;
+
+      // Nothing to do when the draft already matches the on-screen content.
+      if (JSON.stringify(view.state.doc.toJSON()) === JSON.stringify(record.doc)) return;
+
+      // Apply the draft over the current content. Re-checked guards keep this
+      // safe even when invoked later (e.g. after the host prompts the user).
+      const applyRestore = () => {
+        if (cancelled) return;
+        const v = viewRef.current;
+        if (!v) return;
+        if (JSON.stringify(v.state.doc.toJSON()) === JSON.stringify(record.doc)) return;
         setContent(record.doc);
+        // Propagate to a controlled parent so its state matches the restored
+        // draft (otherwise a later save could persist the pre-restore value).
+        propsRef.current.onChange?.(record.doc, handle);
+        propsRef.current.onLocalRestore?.({ updatedAt: record.updatedAt, rev: record.rev });
+      };
+      const discard = () => persistence.clearLocal();
+
+      const onLocalDraft = propsRef.current.onLocalDraft;
+      if (onLocalDraft) {
+        // Defer the decision to the host (e.g. ask the user) instead of
+        // overwriting the on-screen content automatically.
+        onLocalDraft(
+          { doc: record.doc, updatedAt: record.updatedAt, rev: record.rev },
+          { restore: applyRestore, discard },
+        );
+      } else {
+        applyRestore();
       }
     })();
 

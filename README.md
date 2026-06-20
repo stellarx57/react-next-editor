@@ -774,6 +774,29 @@ How it works:
 - **Local persistence** (`PersistenceConfig`) — debounced autosave of
   `doc.toJSON()` to a `LocalStoreAdapter`; the default is `IndexedDBStore` (with
   an in-memory fallback). Configure `store`, `debounceMs`, `requestPersistent`.
+- **Draft restore** (`persistence.restore` + `onLocalDraft`) — on (re)mount the
+  editor surfaces a locally-persisted draft so **unsaved offline edits are never
+  lost**. `restore` selects which drafts are *eligible*: `'whenDirty'` (default)
+  a draft with unsaved changes *even over a controlled `value`* (a clean/synced
+  draft yields to the value); `'whenEmpty'` only when no `value` is set;
+  `'always'`. **To ask the user first** (recommended for controlled editors),
+  provide `onLocalDraft(draft, { restore, discard })` — the editor then defers
+  instead of auto-applying, so you can prompt and call `restore()` (applies the
+  draft; fires `onChange` so a later save persists it, plus `onLocalRestore`) or
+  `discard()` (drops the local draft). Without `onLocalDraft`, the eligible draft
+  is auto-applied.
+
+```tsx
+<Editor
+  documentId={id}
+  value={serverDoc}                                   // controlled, from your API
+  onChange={(json) => setForm(json)}
+  persistence={{ enabled: true /* restore: 'whenDirty' (default) */ }}
+  onLocalDraft={(draft, { restore, discard }) =>
+    confirm('You have unsaved offline changes. Restore them?') ? restore() : discard()
+  }
+/>;
+```
 - **Outbox** — every local save is recorded in a durable outbox that survives
   reloads and restarts.
 - **Connectivity** (`ConnectivityMonitor`) — listens to `online`/`offline` and,
