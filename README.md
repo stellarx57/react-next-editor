@@ -316,7 +316,7 @@ defaults apply.
 | `strings` | `Partial<EditorStrings>` | English | Localized UI strings. |
 | `fontFamilies` | `string[]` | built-in | Font picker options. |
 | `fontSizes` | `number[]` (pt) | built-in | Size picker options. |
-| `colorPalette` | `string[]` | built-in | Color/highlight palette. |
+| `colorPalette` | `string[]` | built-in | Text-color/highlight palette (the picker also has a **custom color** input for any color). |
 | `extensions` | `EditorExtensions` | — | Custom plugins and custom DOCX mappings. |
 | `persistence` | `PersistenceConfig` | auto | Local store, autosave, store adapter. |
 | `sync` | `SyncConfig` | — | REST adapter; auto-upload on reconnect. |

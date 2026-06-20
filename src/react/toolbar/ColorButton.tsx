@@ -16,12 +16,28 @@ interface ColorButtonProps {
   activeColor?: string | null;
 }
 
-/** A color picker button with a palette popover (text color / highlight). */
+/**
+ * Normalize a color to a 6-digit hex for the native color input, which only
+ * accepts that form. Shorthand `#abc` is expanded; anything else falls back.
+ */
+function toHexInputValue(color: string | null | undefined, fallback: string): string {
+  if (typeof color === 'string') {
+    const v = color.trim().toLowerCase();
+    if (/^#[0-9a-f]{6}$/.test(v)) return v;
+    if (/^#[0-9a-f]{3}$/.test(v)) {
+      return `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}`;
+    }
+  }
+  return fallback;
+}
+
+/** A color picker button with a palette popover + custom picker (text color / highlight). */
 export function ColorButton({ iconName, label, apply, clear, activeColor }: ColorButtonProps) {
   const { run, colorPalette } = useEditorContext();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const defaultColor = iconName === 'highlight' ? '#fff2a8' : '#000000';
 
   useEffect(() => {
     if (!open) return;
@@ -78,6 +94,19 @@ export function ColorButton({ iconName, label, apply, clear, activeColor }: Colo
               }}
             />
           ))}
+          {/* Custom color — pick any color, not just the palette. The ProseMirror
+              selection persists in editor state even though the native picker
+              takes DOM focus, so the chosen color applies to the selected text. */}
+          <label className="rne-color-custom">
+            <span className="rne-color-custom-label">Custom</span>
+            <input
+              type="color"
+              className="rne-color-input"
+              aria-label={`${label}: custom color`}
+              defaultValue={toHexInputValue(activeColor, defaultColor)}
+              onChange={(e) => run(apply(e.target.value))}
+            />
+          </label>
           {clear && (
             <button
               type="button"

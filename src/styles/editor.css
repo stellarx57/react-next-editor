@@ -196,6 +196,34 @@
   transform: scale(1.12);
 }
 
+/* Custom color row — spans the full palette width, below the swatches. */
+.rne-color-custom {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--rne-border-color);
+  cursor: pointer;
+}
+
+.rne-color-custom-label {
+  font-size: 11px;
+  color: var(--rne-toolbar-color);
+}
+
+.rne-color-input {
+  width: 28px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+}
+
 /* ---- Canvas + page surface (single-flow model, G-1 = A) ---- */
 .rne-canvas {
   flex: 1 1 auto;
